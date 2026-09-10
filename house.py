@@ -264,7 +264,7 @@ LOGIN_PASSWORD = os.getenv("AILYN_LOGIN_PASSWORD", "")
 
 st.set_page_config(
     page_title=APP_NAME,
-    page_icon="🅰️",
+    page_icon=Image.open(BytesIO(base64.b64decode(AILYN_LOGO_DATA.split(",", 1)[1]))),
     layout="wide",
 )
 
@@ -310,6 +310,10 @@ if "remaining_money" not in st.session_state:
     st.session_state.remaining_money = 0.0
 if "view" not in st.session_state:
     st.session_state.view = "home"
+if "workspace_width" not in st.session_state:
+    st.session_state.workspace_width = 1200
+if "sidebar_width" not in st.session_state:
+    st.session_state.sidebar_width = 330
 if st.session_state.view not in {
     "home", "payroll_dashboard", "material_dashboard", "planner_input", "planner_output", "material",
     "expense", "excess", "ledger", "add_labor", "add_payroll_expense",
@@ -1595,6 +1599,48 @@ section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* Emerald glass finish: keep the existing project background unchanged. */
+:root {
+    --emerald-edge: rgba(184, 255, 216, .42);
+    --emerald-glow: rgba(72, 255, 161, .18);
+    --emerald-surface: rgba(4, 42, 25, .62);
+}
+.block-container,
+.dash-section,
+[data-testid="stMetric"],
+[data-testid="stExpander"],
+.sidebar-brand,
+.sidebar-budget-card {
+    background: linear-gradient(145deg, rgba(10, 84, 47, .58), var(--emerald-surface)) !important;
+    border-color: var(--emerald-edge) !important;
+    box-shadow: 0 22px 48px rgba(0, 12, 6, .34), inset 0 1px 0 rgba(255, 255, 255, .18), 0 0 24px var(--emerald-glow) !important;
+    backdrop-filter: blur(24px) saturate(165%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(165%) !important;
+}
+.block-container h1, .block-container h2, .block-container h3,
+.section-title, .schedule-title, [data-testid="stMetricValue"] {
+    color: #f4fff8 !important;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, .36);
+}
+.block-container p, .block-container label, .section-head span,
+.tx-type, .tx-date, .schedule-muted {
+    color: #d5f6e1 !important;
+}
+button, .stDownloadButton > button, .stFormSubmitButton > button {
+    background: linear-gradient(145deg, rgba(18, 132, 70, .86), rgba(2, 48, 26, .94)) !important;
+    border-color: rgba(177, 255, 211, .52) !important;
+    box-shadow: 0 7px 0 rgba(1, 20, 10, .84), 0 16px 30px rgba(0, 0, 0, .30), inset 0 1px 0 rgba(255, 255, 255, .22) !important;
+}
+div[data-baseweb="input"], div[data-baseweb="select"] > div, textarea {
+    background: rgba(1, 30, 16, .78) !important;
+    border-color: rgba(177, 255, 211, .34) !important;
+    box-shadow: inset 0 5px 16px rgba(0, 0, 0, .30), 0 0 18px rgba(72, 255, 161, .08) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 if st.session_state.dark_mode:
     st.markdown("""
     <style>
@@ -2127,112 +2173,6 @@ section[data-testid="stSidebar"] > div {
 </style>
 """, unsafe_allow_html=True)
 
-# ================================================================
-# RESIZABLE SIDEBAR — drag the RIGHT EDGE (no resize button needed)
-# ================================================================
-st.markdown("""
-<style>
-/* The sidebar width is controlled by --ailyn-sidebar-width. */
-:root { --ailyn-sidebar-width: 320px; }
-section[data-testid="stSidebar"] {
-    width: var(--ailyn-sidebar-width) !important;
-    min-width: var(--ailyn-sidebar-width) !important;
-    max-width: var(--ailyn-sidebar-width) !important;
-    transition: width .08s linear, min-width .08s linear, max-width .08s linear !important;
-    overflow: visible !important;
-    z-index: 1000 !important;
-}
-section[data-testid="stSidebar"] > div {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-}
-/* Visible high-contrast drag strip on the sidebar's right edge. */
-section[data-testid="stSidebar"]::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: -5px;
-    width: 10px;
-    height: 100%;
-    cursor: ew-resize;
-    background: linear-gradient(90deg, transparent 0%, rgba(114,247,176,.16) 35%, rgba(255,255,255,.72) 50%, rgba(114,247,176,.16) 65%, transparent 100%);
-    border-right: 1px solid rgba(255,255,255,.75);
-    box-shadow: 0 0 12px rgba(114,247,176,.35);
-    opacity: .9;
-}
-section[data-testid="stSidebar"]::before {
-    content: "";
-    position: absolute;
-    z-index: 2;
-    right: -3px;
-    top: 50%;
-    width: 6px;
-    height: 72px;
-    transform: translateY(-50%);
-    border-radius: 8px;
-    background: repeating-linear-gradient(to bottom, #ffffff 0 4px, transparent 4px 9px);
-    pointer-events: none;
-    filter: drop-shadow(0 0 5px rgba(114,247,176,.7));
-}
-body.ailyn-resizing, body.ailyn-resizing * { cursor: ew-resize !important; user-select: none !important; }
-/* Keep the main area fluid while the sidebar is dragged. */
-[data-testid="stAppViewContainer"] > .main { min-width: 0 !important; }
-@media (max-width: 800px) {
-    :root { --ailyn-sidebar-width: 285px; }
-    section[data-testid="stSidebar"] { max-width: min(var(--ailyn-sidebar-width), 86vw) !important; min-width: min(var(--ailyn-sidebar-width), 86vw) !important; width: min(var(--ailyn-sidebar-width), 86vw) !important; }
-}
-</style>
-<script>
-(function () {
-  const MIN = 235, MAX = 520, DEFAULT = 320;
-  const root = document.documentElement;
-  let dragging = false;
-
-  function sidebar() { return document.querySelector('section[data-testid="stSidebar"]'); }
-  function setWidth(px, save=true) {
-    px = Math.max(MIN, Math.min(MAX, Math.round(px)));
-    root.style.setProperty('--ailyn-sidebar-width', px + 'px');
-    if (save) { try { localStorage.setItem('ailyn_sidebar_width', String(px)); } catch(e) {} }
-  }
-  function restore() {
-    let w = DEFAULT;
-    try { w = parseInt(localStorage.getItem('ailyn_sidebar_width') || DEFAULT, 10); } catch(e) {}
-    setWidth(Number.isFinite(w) ? w : DEFAULT, false);
-  }
-
-  function bind() {
-    const sb = sidebar();
-    if (!sb || sb.dataset.ailynResizeBound === '1') return;
-    sb.dataset.ailynResizeBound = '1';
-    sb.addEventListener('mousedown', function(e) {
-      const r = sb.getBoundingClientRect();
-      /* Only the last 14px of the sidebar is the drag zone. */
-      if (e.clientX < r.right - 14) return;
-      dragging = true;
-      document.body.classList.add('ailyn-resizing');
-      e.preventDefault();
-    });
-  }
-
-  document.addEventListener('mousemove', function(e) {
-    if (!dragging) return;
-    setWidth(e.clientX);
-  });
-  document.addEventListener('mouseup', function() {
-    if (!dragging) return;
-    dragging = false;
-    document.body.classList.remove('ailyn-resizing');
-  });
-  window.addEventListener('resize', bind);
-  restore();
-  bind();
-  const observer = new MutationObserver(bind);
-  observer.observe(document.body, {childList:true, subtree:true});
-})();
-</script>
-""", unsafe_allow_html=True)
-
 # === CLIENT DRAGGABLE SIDEBAR — FINAL FIX ===
 # This block changes sidebar geometry only. The existing project background,
 # images, colors, logo, and theme are intentionally untouched.
@@ -2263,6 +2203,9 @@ section[data-testid="stSidebar"]::after {
     width: 20px;
     height: 100%;
     cursor: ew-resize;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
     z-index: 2147483646;
     background: transparent;
 }
@@ -2279,6 +2222,7 @@ section[data-testid="stSidebar"]::before {
     border: 1px solid #06130b;
     box-shadow: 0 0 0 1px #8fffc1, 0 0 16px rgba(143,255,193,.95);
     pointer-events: none;
+    touch-action: none;
     z-index: 2147483647;
 }
 html.ailyn-resizing, html.ailyn-resizing * {
@@ -2343,6 +2287,9 @@ st.components.v1.html("""
     dragging = true;
     startX = e.clientX;
     startWidth = r.width;
+        if (e.pointerId !== undefined && e.target && e.target.setPointerCapture) {
+            try { e.target.setPointerCapture(e.pointerId); } catch (error) {}
+        }
     const d = doc();
     d.documentElement.classList.add('ailyn-resizing');
     e.preventDefault();
@@ -2370,6 +2317,7 @@ st.components.v1.html("""
       d.addEventListener('pointermove', onMove, true);
       d.addEventListener('pointerup', onUp, true);
       d.addEventListener('pointercancel', onUp, true);
+    d.defaultView.addEventListener('blur', onUp);
     }
     if (!d.__ailynSidebarResizeObserver) {
       d.__ailynSidebarResizeObserver = new MutationObserver(function () {
@@ -2396,6 +2344,28 @@ st.components.v1.html("""
 </script>
 """, height=0, scrolling=False)
 
+st.markdown("""
+<style>
+/* Final visual polish for the sidebar boundary; resize behavior stays unchanged. */
+section[data-testid="stSidebar"] {
+    border-right: 1px solid rgba(164, 255, 204, .18) !important;
+    box-shadow: 14px 0 34px rgba(0, 18, 10, .28), 1px 0 0 rgba(184, 255, 216, .08) !important;
+}
+section[data-testid="stSidebar"]::before {
+    width: 3px !important;
+    height: 72px !important;
+    right: -2px !important;
+    background: linear-gradient(180deg, rgba(220, 255, 234, .82), rgba(93, 241, 158, .58), rgba(220, 255, 234, .82)) !important;
+    border: 1px solid rgba(215, 255, 231, .42) !important;
+    box-shadow: 0 0 10px rgba(104, 255, 175, .38), 0 0 22px rgba(104, 255, 175, .14) !important;
+    opacity: .78 !important;
+}
+section[data-testid="stAppViewContainer"] > .main {
+    filter: drop-shadow(-10px 0 22px rgba(0, 18, 10, .10));
+}
+</style>
+""", unsafe_allow_html=True)
+
 with st.sidebar:
     st.markdown(f"""
     <div class="sidebar-brand">
@@ -2413,6 +2383,10 @@ with st.sidebar:
         f"{manila_now().strftime('%I:%M %p  |  %b %d')}</div>",
         unsafe_allow_html=True
     )
+
+    # Workspace sizing controls: fine slider controls only.
+    
+    
 
     if st.button("📊 DASHBOARD", use_container_width=True, key="side_dashboard"):
         set_view("home")
@@ -2472,6 +2446,50 @@ with st.sidebar:
         st.session_state.welcome_seen = True
         st.session_state.view = "home"
         st.rerun()
+
+# Dynamic workspace sizing. The sidebar sliders above act like draggable split-pane controls.
+_workspace_width = int(st.session_state.get("workspace_width", 1200))
+_sidebar_width = int(st.session_state.get("sidebar_width", 330))
+st.markdown(f"""
+<style>
+/* ================================================================
+   DYNAMIC RESIZABLE WORKSPACE
+   Small -> Wide -> Ultra-wide, controlled from the sidebar.
+   ================================================================ */
+section[data-testid="stSidebar"] {{
+  width: {_sidebar_width}px !important;
+  min-width: {_sidebar_width}px !important;
+}}
+section[data-testid="stSidebar"] > div {{
+  width: {_sidebar_width}px !important;
+  min-width: {_sidebar_width}px !important;
+}}
+[data-testid="stAppViewContainer"] > .main .block-container {{
+  width: min(calc(100vw - {_sidebar_width + 48}px), {_workspace_width}px) !important;
+  max-width: {_workspace_width}px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  transition: width .18s ease, max-width .18s ease;
+}}
+@media (max-width: 900px) {{
+  section[data-testid="stSidebar"] {{
+    width: min(88vw, {_sidebar_width}px) !important;
+    min-width: min(88vw, {_sidebar_width}px) !important;
+  }}
+  [data-testid="stAppViewContainer"] > .main .block-container {{
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px) !important;
+  }}
+}}
+/* Make the sizing controls feel like a split-pane handle. */
+section[data-testid="stSidebar"] [data-testid="stSlider"] {{
+  padding-bottom: 4px;
+}}
+section[data-testid="stSidebar"] [role="slider"] {{
+  cursor: ew-resize !important;
+}}
+</style>
+""", unsafe_allow_html=True)
 
 view = st.session_state.view
 

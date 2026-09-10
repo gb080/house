@@ -17,9 +17,12 @@
       ]
     }
   },
-  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; pip3 install --user streamlit; echo '✅ Packages installed and Requirements met'",
+  "remoteEnv": {
+    "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
+  },
+  "updateContentCommand": "sudo apt-get update && sudo xargs -r apt-get install -y < packages.txt && python3 -m venv .venv && .venv/bin/python -m pip install --upgrade pip setuptools wheel && .venv/bin/python -m pip install -r requirements.txt && echo 'Packages installed in .venv'",
   "postAttachCommand": {
-    "server": "streamlit run house.py --server.enableCORS false --server.enableXsrfProtection false"
+    "server": ".venv/bin/streamlit run house.py --server.enableCORS false --server.enableXsrfProtection false"
   },
   "portsAttributes": {
     "8501": {

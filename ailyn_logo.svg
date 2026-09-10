@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Ailyn House emerald logo</title>
+  <desc id="desc">A translucent emerald glass house with an A monogram.</desc>
+  <defs>
+    <linearGradient id="glass" x1="30" y1="22" x2="220" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d9ffea" stop-opacity=".95"/>
+      <stop offset=".24" stop-color="#62f5a5" stop-opacity=".7"/>
+      <stop offset=".68" stop-color="#079447" stop-opacity=".78"/>
+      <stop offset="1" stop-color="#013d22" stop-opacity=".96"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="42" y1="26" x2="205" y2="229" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f3fff8"/>
+      <stop offset=".45" stop-color="#8affbd"/>
+      <stop offset="1" stop-color="#12b968"/>
+    </linearGradient>
+    <radialGradient id="light" cx="0" cy="0" r="1" gradientTransform="translate(82 62) rotate(49) scale(126)">
+      <stop stop-color="#fff" stop-opacity=".9"/>
+      <stop offset=".34" stop-color="#b9ffd5" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#b9ffd5" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#001d10" flood-opacity=".65"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#48f49a" flood-opacity=".45"/>
+    </filter>
+    <clipPath id="houseClip"><path d="M32 112 128 28l96 84v101H32z"/></clipPath>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M32 112 128 28l96 84v101H32z" fill="url(#glass)" stroke="url(#edge)" stroke-width="6" stroke-linejoin="round"/>
+    <g clip-path="url(#houseClip)" fill="none" stroke="#d9ffea" stroke-opacity=".35" stroke-width="3">
+      <path d="m40 124 88-77 88 77M128 31v182M34 166h188M73 82v131M183 82v131"/>
+      <path d="m48 235 160-196" stroke="#fff" stroke-opacity=".16" stroke-width="18"/>
+      <circle cx="82" cy="62" r="76" fill="url(#light)" stroke="none"/>
+    </g>
+    <path d="M77 207v-62l51-44 51 44v62" fill="#022b18" fill-opacity=".72" stroke="#d9ffea" stroke-opacity=".78" stroke-width="4"/>
+    <path d="m101 188 27-61 27 61M112 163h32" fill="none" stroke="#baffd4" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M49 116 128 47l79 69" fill="none" stroke="#f3fff8" stroke-opacity=".9" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -2366,6 +2366,117 @@ section[data-testid="stAppViewContainer"] > .main {
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* Sharp contrast system: explicit text, edge, and focus colors. */
+.block-container,
+.block-container p,
+.block-container label,
+.block-container [data-testid="stMarkdownContainer"],
+section[data-testid="stSidebar"] {
+    color: #f4fff8 !important;
+}
+.block-container h1,
+.block-container h2,
+.block-container h3,
+.block-container h4,
+.dashboard-heading-title,
+.section-title,
+.tx-name,
+.schedule-title,
+[data-testid="stMetricValue"] {
+    color: #ffffff !important;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .68) !important;
+}
+.block-container p,
+.block-container label,
+.dashboard-welcome,
+.section-head span,
+.tx-type,
+.tx-date,
+.schedule-muted,
+section[data-testid="stSidebar"] .stCaption {
+    color: #d8f7e5 !important;
+}
+button,
+.stDownloadButton > button,
+.stFormSubmitButton > button,
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    color: #ffffff !important;
+    border: 1px solid rgba(164, 255, 204, .58) !important;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, .72) !important;
+}
+button:hover,
+.stDownloadButton > button:hover,
+.stFormSubmitButton > button:hover,
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
+    border-color: #baffd6 !important;
+    filter: brightness(1.16) contrast(1.08) !important;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="slider"]:focus-visible {
+    outline: 2px solid #d4ffe4 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 4px rgba(67, 255, 157, .24), 0 0 24px rgba(67, 255, 157, .32) !important;
+}
+div[data-baseweb="input"],
+div[data-baseweb="select"] > div,
+textarea {
+    background: rgba(0, 15, 9, .82) !important;
+    border-color: rgba(164, 255, 204, .46) !important;
+    color: #ffffff !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+/* Deep emerald transparent glass: preserve the existing main background. */
+.block-container {
+    background: linear-gradient(145deg, rgba(2, 46, 27, .46), rgba(0, 13, 8, .34)) !important;
+    border: 1px solid rgba(176, 255, 211, .28) !important;
+    box-shadow: 0 34px 80px rgba(0, 0, 0, .52), inset 0 1px 0 rgba(238, 255, 245, .16), inset 0 -22px 36px rgba(0, 0, 0, .20) !important;
+    backdrop-filter: blur(28px) saturate(155%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(155%) !important;
+}
+.dash-section,
+[data-testid="stMetric"],
+[data-testid="stExpander"],
+.cal-card,
+.ops-panel,
+.newdash-panel {
+    background: linear-gradient(145deg, rgba(5, 72, 40, .54), rgba(0, 18, 11, .42) 58%, rgba(0, 8, 5, .34)) !important;
+    border: 1px solid rgba(153, 255, 199, .34) !important;
+    box-shadow: 0 20px 42px rgba(0, 0, 0, .48), 0 3px 0 rgba(0, 26, 15, .56), inset 0 1px 0 rgba(239, 255, 245, .20), inset 0 -16px 28px rgba(0, 0, 0, .18) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+}
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div {
+    background: linear-gradient(155deg, rgba(0, 42, 24, .92), rgba(0, 9, 6, .94)) !important;
+    border-right: 1px solid rgba(126, 255, 187, .38) !important;
+    box-shadow: 18px 0 58px rgba(0, 0, 0, .58), inset -1px 0 0 rgba(196, 255, 219, .14) !important;
+    backdrop-filter: blur(26px) saturate(155%) !important;
+    -webkit-backdrop-filter: blur(26px) saturate(155%) !important;
+}
+.dash-section::after,
+[data-testid="stMetric"]::after,
+[data-testid="stExpander"]::after,
+.sidebar-brand::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(125deg, rgba(237, 255, 245, .13), transparent 25%, transparent 72%, rgba(70, 255, 160, .06));
+    mix-blend-mode: screen;
+}
+</style>
+""", unsafe_allow_html=True)
+
 with st.sidebar:
     st.markdown(f"""
     <div class="sidebar-brand">

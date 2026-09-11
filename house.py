@@ -24,12 +24,11 @@ try:
 except ModuleNotFoundError:
     pytesseract = None
 TESSERACT_NOT_FOUND_ERROR = getattr(pytesseract, "TesseractNotFoundError", RuntimeError)
-from storage import BACKUP_DIR, DB_FILE, create_backup, delete_scanner_photo, history_count, load_state as load_sqlite_state
+from storage import create_backup, delete_scanner_photo, load_state as load_sqlite_state
 from storage import restore_backup, save_scanner_photo, save_state as save_sqlite_state
-from app_logic import FULL_DAY_RATES, TIER_TABLE, calculate_labor_pay, get_partial_rate
+from app_logic import FULL_DAY_RATES, calculate_labor_pay
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-STATE_FILE = os.path.join(APP_DIR, "app_state.json")
 EXCEL_FILE = os.path.join(APP_DIR, "ailyn_project_ledger.xlsx")
 MATERIALS_EXCEL_FILE = os.path.join(APP_DIR, "materials_ledger.xlsx")
 LABOR_EXCEL_FILE = os.path.join(APP_DIR, "labor_ledger.xlsx")
@@ -73,28 +72,6 @@ def normalize_photo_bytes(photo_bytes, mime_type="image/jpeg"):
     return output.getvalue(), "image/jpeg"
 
 
-def searchable_records(state):
-    records = []
-    for category, key in (("Financial", "records"), ("Labor", "labor_records"), ("Payroll", "payroll_expenses")):
-        for record in state.get(key, []):
-            row_category = "Expense" if category == "Financial" and record.get("type") == "expense" else "Material" if category == "Financial" else category
-            records.append({"category": row_category, **record})
-    return records
-
-
-def find_duplicate_records(records):
-    groups = {}
-    for record in records:
-        signature = (
-            record.get("type", record.get("category", "")),
-            str(record.get("name", record.get("item", record.get("description", "")))).strip().lower(),
-            round(float(record.get("amount", record.get("price", record.get("net", 0))) or 0), 2),
-            record.get("date", record.get("month", "")),
-        )
-        groups.setdefault(signature, []).append(record)
-    return [group for group in groups.values() if len(group) > 1]
-
-
 # --- PERSISTENCE HELPERS
 PERSISTENT_KEYS = [
     "records",
@@ -131,7 +108,7 @@ def month_key(record):
         return manila_now().strftime("%Y-%m")
 
 
-def write_excel(state, archive_entry=None):
+def write_excel(state):
     """Write the current app data to a durable workbook with monthly totals."""
     workbook = Workbook()
     transactions_sheet = workbook.active
@@ -156,8 +133,8 @@ def write_excel(state, archive_entry=None):
         ])
     for record in state.get("payroll_expenses", []):
         payroll_sheet.append([
-            record.get("date", ""), month_key(record), "Payroll Expense", record.get("item", ""),
-            "", "", "", "", float(record.get("price", 0)),
+            record.get("date", ""), month_key(record), "Payroll Expense", "", record.get("item", ""),
+            "", "", "", "", "", float(record.get("price", 0)),
         ])
 
     summary = workbook.create_sheet("Monthly Summary")
@@ -171,15 +148,12 @@ def write_excel(state, archive_entry=None):
         excess = sum(float(r.get("amount", 0)) for r in state.get("records", []) if month_key(r) == month and r.get("type") == "excess")
         labor = sum(float(r.get("net", 0)) for r in state.get("labor_records", []) if month_key(r) == month)
         payroll = sum(float(r.get("price", 0)) for r in state.get("payroll_expenses", []) if month_key(r) == month)
-        summary.append([month, materials, construction, excess, labor, payroll, materials + construction + labor + payroll])
+        summary.append([month, materials, construction, excess, labor, payroll, materials + construction - excess + labor + payroll])
 
     archive = workbook.create_sheet("Receipt Archive")
     archive.append(["Receipt ID", "Saved At", "Report Type", "Title", "HTML File"])
     for entry in state.get("receipt_archive", []):
         archive.append([entry.get("id", ""), entry.get("saved_at", ""), entry.get("report_type", ""), entry.get("title", ""), entry.get("file", "")])
-    if archive_entry:
-            archive.append([archive_entry["id"], archive_entry["saved_at"], archive_entry["report_type"], archive_entry["title"], archive_entry["file"]])
-
     for sheet in workbook.worksheets:
         sheet.freeze_panes = "A2"
         sheet.auto_filter.ref = sheet.dimensions
@@ -331,14 +305,8 @@ if "editing_payroll_expense_index" not in st.session_state:
     st.session_state.editing_payroll_expense_index = None
 if "scanner_input_version" not in st.session_state:
     st.session_state.scanner_input_version = 0
-if "scanner_actions_open" not in st.session_state:
-    st.session_state.scanner_actions_open = False
 if "scanner_open" not in st.session_state:
     st.session_state.scanner_open = False
-if "scanner_flash_mode" not in st.session_state:
-    st.session_state.scanner_flash_mode = "Auto"
-if "scanner_camera_mode" not in st.session_state:
-    st.session_state.scanner_camera_mode = "Back camera"
 if "dark_mode" not in st.session_state:
     st.session_state.dark_mode = False
 if not os.path.exists(EXCEL_FILE):
@@ -412,8 +380,8 @@ def receipt_preview_height(item_count, row_height=58, base_height=560):
 def build_html_report(records, budget, custom_title="INVENTORY RECEIPT"):
     material_and_expense_records = [r for r in records if r["type"] in ["material", "expense"]]
     excess_records = [r for r in records if r["type"] == "excess"]
-    material_total = sum(r["amount"] for r in material_and_expense_records)
     excess_total = sum(r["amount"] for r in excess_records)
+    material_total = sum(r["amount"] for r in material_and_expense_records) - excess_total
     remaining_balance = get_balance()
     date_now = manila_now().strftime("%B %d, %Y")
     sobra_amount = 0.0
@@ -759,11 +727,11 @@ def total_excess():
 
 
 def get_total():
-    return total_materials() + total_expenses()
+    return total_materials() + total_expenses() - total_excess()
 
 
 def get_balance():
-    return float(st.session_state.budget) - total_excess() - get_total()
+    return float(st.session_state.budget) - get_total()
 
 
 def monthly_spend(month=None):
@@ -772,17 +740,26 @@ def monthly_spend(month=None):
         float(record.get("amount", 0)) for record in st.session_state.records
         if record.get("type") in {"material", "expense"} and month_key(record) == month
     )
+    excess = sum(
+        float(record.get("amount", 0)) for record in st.session_state.records
+        if record.get("type") == "excess" and month_key(record) == month
+    )
     labor = sum(float(record.get("net", 0)) for record in st.session_state.labor_records if month_key(record) == month)
     payroll_expenses = sum(float(record.get("price", 0)) for record in st.session_state.payroll_expenses if month_key(record) == month)
-    return construction + labor + payroll_expenses
+    return construction - excess + labor + payroll_expenses
 
 
 def monthly_construction_spend(month=None):
     month = month or manila_now().strftime("%Y-%m")
-    return sum(
+    construction = sum(
         float(record.get("amount", 0)) for record in st.session_state.records
         if record.get("type") in {"material", "expense"} and month_key(record) == month
     )
+    excess = sum(
+        float(record.get("amount", 0)) for record in st.session_state.records
+        if record.get("type") == "excess" and month_key(record) == month
+    )
+    return construction - excess
 
 
 @st.dialog("Project Details", width="large")
@@ -1035,18 +1012,26 @@ def budget_dialog():
 
     with apply_tab:
         with st.form("budget_apply_dialog_form", clear_on_submit=True):
-            amount = st.number_input("Amount to add", min_value=0.01, value=None,
-                                     placeholder="0.00")
+            amount_expression = st.text_input(
+                "Amount to add",
+                placeholder="10000 + 2500 - 500",
+                help="Enter a number or expression using +, -, *, /, and **.",
+            )
             submitted = st.form_submit_button("Apply Budget", use_container_width=True)
         if submitted:
-            if amount is not None:
-                previous_budget = float(st.session_state.budget)
-                st.session_state.budget = previous_budget + float(amount)
-                record_budget_change("Applied", amount, previous_budget)
-                st.success("Budget applied.")
-                st.rerun()
+            try:
+                amount = calculate_expression(amount_expression)
+            except ValueError as error:
+                st.warning(str(error))
             else:
-                st.warning("Enter an amount first.")
+                if amount <= 0:
+                    st.warning("The amount to add must be greater than zero.")
+                else:
+                    previous_budget = float(st.session_state.budget)
+                    st.session_state.budget = previous_budget + float(amount)
+                    record_budget_change("Applied", amount, previous_budget)
+                    st.success("Budget applied.")
+                    st.rerun()
 
     with edit_tab:
         with st.form("budget_edit_dialog_form"):
@@ -2602,6 +2587,492 @@ section[data-testid="stSidebar"] [role="slider"] {{
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* Final spacing pass: one consistent vertical rhythm across every view. */
+.block-container {
+    padding: 6px 32px 48px !important;
+    margin-top: 0 !important;
+}
+section[data-testid="stAppViewContainer"] > .main,
+section[data-testid="stAppViewContainer"] > .main > div {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+.block-container > div {
+    gap: 14px !important;
+}
+div[data-testid="stHorizontalBlock"] {
+    gap: 18px !important;
+    margin-bottom: 14px !important;
+}
+div[data-testid="stVerticalBlock"] > div[data-testid="element-container"] {
+    margin-bottom: 8px !important;
+}
+div[data-testid="stForm"] {
+    padding: 20px 22px 12px !important;
+    margin: 10px 0 18px !important;
+    border-radius: 18px !important;
+}
+div[data-testid="stMetric"] {
+    margin-bottom: 10px !important;
+}
+div[data-testid="stDataFrame"] {
+    margin: 12px 0 22px !important;
+}
+section[data-testid="stSidebar"] .stButton {
+    margin: 0 0 8px !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] {
+    margin: 8px 0 14px !important;
+}
+section[data-testid="stSidebar"] hr {
+    margin: 16px 4px !important;
+}
+@media (max-width: 900px) {
+    .block-container {
+        padding: 4px 16px 36px !important;
+    }
+    div[data-testid="stHorizontalBlock"] {
+        gap: 12px !important;
+        margin-bottom: 10px !important;
+    }
+    div[data-testid="stForm"] {
+        padding: 16px 14px 8px !important;
+        margin-bottom: 14px !important;
+    }
+}
+@media (max-width: 600px) {
+    .block-container {
+        padding: 4px 12px 30px !important;
+    }
+    div[data-testid="stHorizontalBlock"] {
+        display: block !important;
+    }
+    div[data-testid="stHorizontalBlock"] > div {
+        margin-bottom: 12px !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+/* Clear 3D glass finish: preserve the background while using 75% dark surfaces. */
+:root {
+    --glass-dark: rgba(4, 12, 9, .50);
+    --glass-dark-soft: rgba(7, 19, 14, .50);
+    --glass-edge: rgba(214, 255, 231, .24);
+    --glass-edge-bright: rgba(190, 255, 215, .48);
+    --glass-shadow: rgba(0, 0, 0, .58);
+}
+.stApp {
+    background-color: #07110c !important;
+    background-blend-mode: normal !important;
+}
+.stApp:before {
+    background:
+        linear-gradient(115deg, rgba(0, 0, 0, .34), rgba(0, 8, 4, .48)) !important;
+}
+.block-container,
+.dash-section,
+[data-testid="stMetric"],
+[data-testid="stExpander"],
+.cal-card,
+.ops-panel,
+.newdash-panel,
+div[data-testid="stForm"] {
+    background: linear-gradient(145deg, rgba(17, 31, 24, .50), rgba(2, 8, 6, .50)) !important;
+    border: 1px solid var(--glass-edge) !important;
+    box-shadow:
+        0 22px 46px var(--glass-shadow),
+        0 5px 0 rgba(0, 0, 0, .32),
+        inset 0 1px 0 rgba(255, 255, 255, .22),
+        inset 0 -18px 30px rgba(0, 0, 0, .20) !important;
+    backdrop-filter: blur(22px) saturate(125%) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(125%) !important;
+}
+.block-container {
+    background: linear-gradient(145deg, rgba(17, 27, 22, .50), rgba(2, 7, 5, .50)) !important;
+    border-radius: 26px !important;
+}
+.dash-section,
+[data-testid="stMetric"],
+[data-testid="stExpander"],
+.cal-card,
+div[data-testid="stForm"] {
+    border-radius: 18px !important;
+}
+.dash-section::before,
+[data-testid="stMetric"]::before,
+[data-testid="stExpander"]::before,
+.cal-card::before,
+div[data-testid="stForm"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(125deg, rgba(255, 255, 255, .12), transparent 24%, transparent 72%, rgba(107, 255, 167, .06));
+    opacity: .9;
+}
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div {
+    background: linear-gradient(155deg, rgba(13, 23, 18, .50), rgba(1, 6, 4, .50)) !important;
+    border-right: 1px solid var(--glass-edge-bright) !important;
+    box-shadow: 18px 0 56px rgba(0, 0, 0, .62), inset -1px 0 0 rgba(255, 255, 255, .12) !important;
+    backdrop-filter: blur(24px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(120%) !important;
+}
+.sidebar-brand,
+.sidebar-budget-card {
+    background: linear-gradient(145deg, rgba(22, 39, 29, .50), rgba(2, 9, 6, .50)) !important;
+    border-color: var(--glass-edge) !important;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, .52), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
+}
+button,
+.stDownloadButton > button,
+.stFormSubmitButton > button {
+    background: linear-gradient(145deg, rgba(30, 66, 45, .86), rgba(3, 17, 10, .90)) !important;
+    border-color: rgba(201, 255, 222, .34) !important;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, .52), 0 13px 25px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .20) !important;
+}
+button:hover,
+.stDownloadButton > button:hover,
+.stFormSubmitButton > button:hover {
+    border-color: var(--glass-edge-bright) !important;
+    filter: brightness(1.12) !important;
+}
+div[data-baseweb="input"],
+div[data-baseweb="base-input"],
+textarea,
+div[data-baseweb="select"] > div {
+    background: rgba(1, 7, 5, .50) !important;
+    border-color: rgba(198, 255, 219, .30) !important;
+    box-shadow: inset 0 4px 16px rgba(0, 0, 0, .42), 0 3px 10px rgba(0, 0, 0, .22) !important;
+}
+[data-testid="stMetricValue"],
+.section-title,
+.tx-name,
+.schedule-title,
+.block-container h1,
+.block-container h2,
+.block-container h3 {
+    text-shadow: 0 2px 14px rgba(0, 0, 0, .78) !important;
+}
+@media (max-width: 600px) {
+    .block-container {
+        background: linear-gradient(145deg, rgba(17, 27, 22, .50), rgba(2, 7, 5, .50)) !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+/* Final app shell: consistent 8px rhythm and measured proportions. */
+:root {
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --surface: rgba(8, 18, 13, .50);
+    --surface-raised: rgba(14, 30, 21, .52);
+    --line: rgba(216, 255, 231, .22);
+    --text: #f4fff8;
+    --muted: #b7d0bf;
+}
+
+html, body, [class*="css"] {
+    font-family: 'Manrope', sans-serif !important;
+    letter-spacing: 0 !important;
+}
+.stApp {
+    overflow-x: hidden !important;
+}
+section[data-testid="stAppViewContainer"] > .main {
+    padding-top: 0 !important;
+}
+[data-testid="stAppViewContainer"] > .main .block-container {
+    width: min(100% - 40px, 1480px) !important;
+    max-width: 1480px !important;
+    padding: var(--space-2) 0 var(--space-6) !important;
+    margin: 0 auto !important;
+}
+
+/* Streamlit's generated vertical wrappers are the actual page rhythm. */
+[data-testid="stVerticalBlock"] {
+    gap: var(--space-3) !important;
+}
+[data-testid="stHorizontalBlock"] {
+    gap: var(--space-4) !important;
+    align-items: stretch !important;
+}
+[data-testid="element-container"] {
+    margin: 0 !important;
+}
+[data-testid="stMarkdownContainer"] p {
+    margin: 0 0 var(--space-2) !important;
+    line-height: 1.5 !important;
+}
+h1, h2, h3, h4 {
+    margin: var(--space-3) 0 var(--space-2) !important;
+    line-height: 1.15 !important;
+}
+
+/* Shared surface proportions. */
+.dash-section,
+[data-testid="stMetric"],
+[data-testid="stExpander"],
+.cal-card,
+div[data-testid="stForm"] {
+    min-width: 0 !important;
+    border-radius: 16px !important;
+}
+.dash-section {
+    padding: var(--space-5) !important;
+}
+[data-testid="stMetric"] {
+    min-height: 108px !important;
+    padding: var(--space-4) !important;
+}
+[data-testid="stMetricLabel"] {
+    line-height: 1.3 !important;
+}
+
+/* Forms need breathing room without becoming oversized panels. */
+div[data-testid="stForm"] {
+    padding: var(--space-5) !important;
+    margin: var(--space-2) 0 var(--space-4) !important;
+    border: 1px solid var(--line) !important;
+}
+div[data-testid="stForm"] [data-testid="stVerticalBlock"] {
+    gap: var(--space-3) !important;
+}
+div[data-testid="stFormSubmitButton"],
+div[data-testid="stButton"] {
+    margin-top: var(--space-1) !important;
+}
+button,
+.stDownloadButton > button,
+.stFormSubmitButton > button {
+    min-height: 44px !important;
+    padding: 0 var(--space-4) !important;
+    border-radius: 12px !important;
+    line-height: 1.2 !important;
+}
+div[data-baseweb="input"],
+div[data-baseweb="select"] > div,
+textarea {
+    min-height: 44px !important;
+    border-radius: 10px !important;
+}
+
+/* Tables and data surfaces align to the same edge as their headings. */
+[data-testid="stDataFrame"],
+[data-testid="stTable"] {
+    width: 100% !important;
+    margin: var(--space-3) 0 var(--space-4) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+[data-testid="stAlert"] {
+    margin: var(--space-3) 0 !important;
+    border-radius: 12px !important;
+}
+hr {
+    margin: var(--space-4) 0 !important;
+    border-color: rgba(216, 255, 231, .16) !important;
+}
+
+/* Sidebar: compact, aligned controls with deliberate section separation. */
+section[data-testid="stSidebar"] > div {
+    padding: var(--space-5) var(--space-4) var(--space-6) !important;
+}
+section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    gap: var(--space-2) !important;
+}
+section[data-testid="stSidebar"] button {
+    min-height: 48px !important;
+    height: auto !important;
+    margin: 0 0 var(--space-2) !important;
+    padding: 0 var(--space-3) !important;
+    border-radius: 12px !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] {
+    margin: var(--space-2) 0 !important;
+    border-radius: 12px !important;
+}
+
+@media (max-width: 900px) {
+    [data-testid="stAppViewContainer"] > .main .block-container {
+        width: calc(100% - 24px) !important;
+        padding: var(--space-2) 0 var(--space-5) !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        gap: var(--space-3) !important;
+    }
+    .dash-section,
+    div[data-testid="stForm"] {
+        padding: var(--space-4) !important;
+    }
+}
+@media (max-width: 600px) {
+    [data-testid="stHorizontalBlock"] {
+        display: block !important;
+    }
+    [data-testid="stHorizontalBlock"] > div {
+        width: 100% !important;
+        margin-bottom: var(--space-3) !important;
+    }
+    [data-testid="stMetric"] {
+        min-height: 88px !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        padding: var(--space-4) var(--space-3) var(--space-5) !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+/* UHD finish: stable geometry, smooth motion, and one measured visual rhythm. */
+*, *::before, *::after {
+    box-sizing: border-box !important;
+}
+html {
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+}
+.stApp, .stApp * {
+    scroll-behavior: smooth;
+}
+.stApp button,
+.stApp input,
+.stApp textarea,
+.stApp select,
+.stApp [data-testid="stMetric"],
+.stApp [data-testid="stExpander"],
+.stApp .dash-section,
+.stApp .cal-card,
+.stApp div[data-testid="stForm"] {
+    transition:
+        background-color .22s ease,
+        border-color .22s ease,
+        box-shadow .22s ease,
+        color .22s ease,
+        opacity .22s ease,
+        transform .22s cubic-bezier(.2, .8, .2, 1) !important;
+}
+.stApp button:hover,
+.stApp [data-testid="stMetric"]:hover,
+.stApp .dash-section:hover,
+.stApp .cal-card:hover {
+    transform: translateY(-2px) !important;
+}
+.stApp button:active {
+    transform: translateY(1px) !important;
+}
+.stApp button,
+.stApp .stDownloadButton > button,
+.stApp .stFormSubmitButton > button {
+    min-height: 46px !important;
+    max-height: 54px !important;
+    white-space: normal !important;
+}
+.stApp input,
+.stApp textarea,
+.stApp [data-baseweb="input"],
+.stApp [data-baseweb="base-input"],
+.stApp [data-baseweb="select"] > div {
+    min-height: 46px !important;
+}
+.stApp textarea {
+    min-height: 96px !important;
+    padding-top: 12px !important;
+}
+.stApp [data-testid="stMetric"] {
+    min-height: 112px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+}
+.stApp [data-testid="stMetricLabel"] {
+    min-height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+.stApp [data-testid="stMetricValue"] {
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+}
+.stApp [data-testid="stDataFrame"],
+.stApp [data-testid="stTable"] {
+    min-height: 0 !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .24) !important;
+}
+.stApp .dashboard-heading,
+.stApp .dashboard-welcome,
+.stApp .dash-section,
+.stApp .cal-grid,
+.stApp .ledger-entry {
+    margin-top: 0 !important;
+}
+.stApp .dashboard-heading {
+    padding-top: 4px !important;
+    margin-bottom: 16px !important;
+}
+.stApp .dashboard-welcome {
+    margin-bottom: 20px !important;
+}
+.stApp .dash-section,
+.stApp .cal-card,
+.stApp div[data-testid="stForm"] {
+    padding: 20px !important;
+}
+.stApp .cal-grid {
+    gap: 20px !important;
+}
+section[data-testid="stSidebar"] button:hover {
+    transform: translateX(2px) translateY(-1px) !important;
+}
+@media (max-width: 900px) {
+    [data-testid="stAppViewContainer"] > .main .block-container {
+        width: calc(100% - 24px) !important;
+    }
+    .stApp .dash-section,
+    .stApp .cal-card,
+    .stApp div[data-testid="stForm"] {
+        padding: 16px !important;
+    }
+}
+@media (max-width: 600px) {
+    .stApp [data-testid="stMetric"] {
+        min-height: 92px !important;
+    }
+    .stApp .dashboard-heading {
+        margin-bottom: 12px !important;
+    }
+    .stApp button,
+    .stApp .stDownloadButton > button,
+    .stApp .stFormSubmitButton > button {
+        min-height: 44px !important;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 view = st.session_state.view
 
 if view == "home":
@@ -2616,10 +3087,10 @@ if view == "home":
     payroll_total = payroll_labor + payroll_expenses
     total_operating_spend = used + payroll_total
     worker_count = len(st.session_state.labor_records)
-    chart_total = max(material + expenses + excess, 1.0)
+    chart_total = max(material + expenses, 1.0)
     p1 = material / chart_total * 360
     p2 = p1 + expenses / chart_total * 360
-    p3 = p2 + excess / chart_total * 360
+    p3 = 360
     today_key = manila_now().strftime("%Y-%m-%d")
     today_tasks = [t for t in st.session_state.planner_tasks if t.get("date_obj") == today_key]
     upcoming_tasks = [t for t in st.session_state.planner_tasks if t.get("date_obj", "") >= today_key]
@@ -2715,11 +3186,11 @@ if view == "home":
         <div class="dash-section">
           <div class="section-head"><div class="section-title" style="margin:0">EXPENSES OVERVIEW</div><span style="font-size:11px;color:#7b867f;font-weight:700">THIS PROJECT</span></div>
           <div class="donut-wrap">
-            <div class="donut" style="--p1:{p1}deg;--p2:{p2}deg;--p3:{p3}deg"><div class="donut-center">₱{used:,.0f}<small>Total Expenses</small></div></div>
+            <div class="donut" style="--p1:{p1}deg;--p2:{p2}deg;--p3:{p3}deg"><div class="donut-center">₱{used:,.0f}<small>Net Expenses</small></div></div>
             <div class="legend">
               <div class="legend-row"><span><i class="dot" style="background:#075c28"></i>Materials</span><b>₱{material:,.2f}</b></div>
               <div class="legend-row"><span><i class="dot" style="background:#e0aa25"></i>Expenses</span><b>₱{expenses:,.2f}</b></div>
-              <div class="legend-row"><span><i class="dot" style="background:#e85d4a"></i>Excess</span><b>₱{excess:,.2f}</b></div>
+              <div class="legend-row"><span><i class="dot" style="background:#e85d4a"></i>Excess deduction</span><b>-₱{excess:,.2f}</b></div>
             </div>
                     </div>
                 </div>
@@ -2944,7 +3415,7 @@ elif view == "planner_output":
 
 elif view == "material_dashboard":
     material_records = [r for r in st.session_state.records if r.get("type") == "material"]
-    material_total = sum(float(r.get("amount", 0) or 0) for r in material_records)
+    material_total = sum(float(r.get("amount", 0) or 0) for r in material_records) - total_excess()
     material_qty = sum(float(r.get("qty", 0) or 0) for r in material_records)
     suppliers = len({str(r.get("sender") or r.get("supplier") or "").strip() for r in material_records if str(r.get("sender") or r.get("supplier") or "").strip()})
 

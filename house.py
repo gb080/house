@@ -399,35 +399,42 @@ def build_html_report(records, budget, custom_title="INVENTORY RECEIPT"):
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@600;700;800&display=swap');
-body {{ font-family: 'Akira Expanded', 'Rajdhani', 'Orbitron', sans-serif; font-weight: 700; background-color: #f0f4f0; margin: 0; padding: 20px; color: #333; }}
-.receipt-meta h2 {{ font-family: 'Ethnocentric', 'Orbitron', sans-serif; font-weight: 800; }}
-.receipt-container {{ max-width: 1000px; margin: auto; background: #fff; padding: 30px; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 10px solid #1b5e20; }}
-.header {{ display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }}
-.company-info h1 {{ color: #1b5e20; margin: 0; font-size: 24px; letter-spacing: -1px; }}
-.company-info p {{ margin: 4px 0; font-size: 12px; color: #666; }}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap');
+:root {{ --ink: #10251b; --muted: #64776c; --emerald: #075c35; --deep: #03281a; --line: #dbe8df; --champagne: #b3945a; }}
+* {{ box-sizing: border-box; }}
+body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: linear-gradient(135deg, #eaf2ed 0%, #f8faf8 52%, #e4efe8 100%); margin: 0; padding: 20px; color: var(--ink); }}
+.receipt-meta h2 {{ font-family: 'Orbitron', sans-serif; font-weight: 800; letter-spacing: .08em; }}
+.receipt-container {{ max-width: 1000px; margin: auto; background: linear-gradient(145deg, #ffffff 0%, #fbfdfb 62%, #f1f7f3 100%); padding: 30px; border-radius: 14px; box-shadow: 0 22px 50px rgba(16, 52, 34, .16), 0 2px 0 rgba(255,255,255,.9) inset; border-top: 8px solid var(--deep); position: relative; overflow: hidden; }}
+.receipt-container::before {{ content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,.7), transparent 26%, transparent 72%, rgba(7,92,53,.05)); }}
+.header {{ position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; margin-bottom: 26px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }}
+.company-brand {{ display: flex; align-items: center; gap: 12px; }}
+.company-brand img {{ width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(0 5px 9px rgba(0, 45, 25, .22)); }}
+.company-info h1 {{ color: var(--deep); margin: 0; font-family: 'Orbitron', sans-serif; font-size: 29px; letter-spacing: .02em; line-height: 1.1; }}
+.company-info p {{ margin: 5px 0; font-size: 12px; color: var(--muted); }}
 .receipt-meta {{ text-align: left; margin-top: 10px; }}
 @media (min-width: 768px) {{ .receipt-meta {{ text-align: right; margin-top: 0; }} }}
-.receipt-meta h2 {{ margin: 0; font-size: 16px; text-transform: uppercase; color: #1b5e20; }}
-.receipt-meta p {{ margin: 4px 0; font-size: 12px; font-weight: bold; }}
-table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }}
-th {{ background-color: #1b5e20; color: #ffffff; text-align: left; padding: 10px; text-transform: uppercase; letter-spacing: 1px; }}
-td {{ padding: 10px 8px; border-bottom: 1px solid #f0f0f0; }}
+.receipt-meta h2 {{ margin: 0; font-size: 16px; text-transform: uppercase; color: var(--emerald); }}
+.receipt-meta p {{ margin: 5px 0; font-size: 12px; font-weight: 600; color: var(--muted); }}
+table {{ width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 20px; font-size: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }}
+th {{ background: linear-gradient(105deg, var(--deep), var(--emerald)); color: #ffffff; text-align: left; padding: 11px 10px; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }}
+td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: #30463a; }}
+tbody tr:last-child td {{ border-bottom: 0; }}
+tbody tr:hover td {{ background: #f1f8f4; }}
 .qty-col, .desccol, .pricecol, .deliverycol, .totalcol {{ text-align: left; }}
-td.desccol {{ font-weight: 700; color: #333333; }}
+td.desccol {{ font-weight: 700; color: var(--ink); }}
 th.desccol {{ color: #ffffff; }}
 .summary-container {{ display: flex; justify-content: flex-end; }}
 .summary-table {{ width: 100%; }}
 @media (min-width: 768px) {{ .summary-table {{ width: 420px; }} }}
-.grand-total {{ background: #013220; color: white; padding: 20px; border-radius: 4px; margin-top: 15px; }}
+.grand-total {{ background: linear-gradient(145deg, #063d27 0%, #012417 70%, #00150d 100%); color: white; padding: 20px; border-radius: 10px; margin-top: 15px; box-shadow: 0 14px 28px rgba(1, 35, 22, .22), inset 0 1px 0 rgba(255,255,255,.16); }}
 .balance-info {{ font-size: 13px; line-height: 1.8; }}
 .balance-row {{ display: flex; justify-content: space-between; }}
-.material-row {{ font-size: 18px; font-weight: bold; }}
-.final-balance-row {{ display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.4); margin-top: 8px; padding-top: 8px; font-size: 18px; font-weight: bold; }}
-.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }}
+.material-row {{ font-size: 18px; font-weight: 700; color: #f5fff8; }}
+.final-balance-row {{ display: flex; justify-content: space-between; border-top: 1px solid rgba(206,255,225,.24); margin-top: 10px; padding-top: 10px; font-size: 18px; font-weight: 700; }}
+.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: #788c80; text-transform: uppercase; letter-spacing: .14em; }}
 .save-btn-container {{ text-align: center; margin-bottom: 25px; }}
-.save-img-btn {{ background-color: #1b5e20; color: white; border: none; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }}
-.save-img-btn:hover {{ background-color:#013220; }}
+.save-img-btn {{ background: linear-gradient(105deg, #075c35, #0b8a50); color: white; border: 1px solid rgba(255,255,255,.22); padding: 12px 24px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; box-shadow: 0 8px 18px rgba(1,50,30,.22), inset 0 1px 0 rgba(255,255,255,.2); }}
+.save-img-btn:hover {{ background: linear-gradient(105deg, #0b7444, #10a461); transform: translateY(-1px); }}
 @media print {{ .save-btn-container {{ display: none; }} }}
 </style>
 </head>
@@ -438,10 +445,12 @@ th.desccol {{ color: #ffffff; }}
 <div class="receipt-container" id="receiptContent">
 <div class="header">
 <div class="company-info">
+<div class="company-brand"><img src="{AILYN_LOGO_DATA}" alt="Ailyn House logo"><div>
 <h1>AILYN HOUSE PROJECT</h1>
 <p>Official Material & Expense Inventory</p>
 <p>Management System {APP_VERSION}</p>
 <p>Backup Receiver: <i>{RECEIVER_AILYN}</i></p>
+</div></div>
 </div>
 <div class="receipt-meta">
 <h2>{custom_title}</h2>
@@ -535,11 +544,14 @@ function saveAsImage() {{
 
 
 def generate_payroll_html(labor_records, expense_records, remaining_money=0.0, custom_title="INVENTORY RECEIPT"):
-    date_str = manila_now().strftime("%B %d, %Y | %I:%M %p")
-    total_labor = sum(r['net'] for r in labor_records)
-    total_expenses = sum(e['price'] for e in expense_records)
+    date_str = manila_now().strftime("%B %d, %Y")
+    time_str = manila_now().strftime("%I:%M %p")
+    total_labor = sum(float(r.get('net', 0) or 0) for r in labor_records)
+    total_expenses = sum(float(e.get('price', 0) or 0) for e in expense_records)
+    remaining_balance = float(remaining_money or 0.0)
     sub_total = total_labor + total_expenses
-    grand_total = sub_total - (remaining_money or 0.0)
+    grand_total = sub_total - remaining_balance
+    balance_color = "#ffffff" if remaining_balance <= 0 else "#a5d6a7"
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -548,80 +560,99 @@ def generate_payroll_html(labor_records, expense_records, remaining_money=0.0, c
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap');
+:root {{ --ink: #10251b; --muted: #64776c; --emerald: #075c35; --deep: #03281a; --line: #dbe8df; --champagne: #b3945a; }}
 * {{ box-sizing: border-box; }}
-html, body {{ width: 100%; max-width: 100%; margin: 0; overflow-x: hidden; }}
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@600;700;800&display=swap');
-body {{ font-family: 'Akira Expanded', 'Rajdhani', 'Orbitron', sans-serif !important; font-weight: 700; background-color: #f0f4f0 !important; color: #333; padding: 20px !important; }}
-#receiptContent h1, #receiptContent h3 {{ font-family: 'Akira Expanded', 'Rajdhani', 'Orbitron', sans-serif !important; font-weight: 700; }}
-#receiptContent h3 {{ font-family: 'Ethnocentric', 'Orbitron', sans-serif !important; font-weight: 800; }}
-#receiptContent {{ width: min(100%, 1000px); margin: 0 auto !important; background: #fff !important; padding: 30px !important; border-radius: 4px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important; border-top: 10px solid #1b5e20 !important; }}
-#receiptContent table {{ max-width: 100%; }}
-#receiptContent th {{ background-color: #1b5e20 !important; color: #fff !important; text-transform: uppercase; letter-spacing: 1px; }}
-#receiptContent td {{ border-bottom: 1px solid #f0f0f0 !important; overflow-wrap: anywhere; }}
-#receiptContent h1, #receiptContent h3 {{ color: #1b5e20 !important; }}
-#receiptContent > table:first-child {{ margin-bottom: 30px !important; }}
-#receiptContent > table:last-of-type td:last-child {{ background: #013220 !important; color: #fff !important; }}
+body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: linear-gradient(135deg, #eaf2ed 0%, #f8faf8 52%, #e4efe8 100%); margin: 0; padding: 20px; color: var(--ink); }}
+.receipt-meta h2 {{ font-family: 'Orbitron', sans-serif; font-weight: 800; letter-spacing: .08em; }}
+.receipt-container {{ max-width: 1000px; margin: auto; background: linear-gradient(145deg, #ffffff 0%, #fbfdfb 62%, #f1f7f3 100%); padding: 30px; border-radius: 14px; box-shadow: 0 22px 50px rgba(16, 52, 34, .16), 0 2px 0 rgba(255,255,255,.9) inset; border-top: 8px solid var(--deep); position: relative; overflow: hidden; }}
+.receipt-container::before {{ content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,.7), transparent 26%, transparent 72%, rgba(7,92,53,.05)); }}
+.header {{ position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }}
+.company-brand {{ display: flex; align-items: center; gap: 12px; }}
+.company-brand img {{ width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 5px 9px rgba(0, 45, 25, .22)); }}
+.company-info h1 {{ color: var(--deep); margin: 0; font-family: 'Orbitron', sans-serif; font-size: 24px; letter-spacing: .02em; }}
+.company-info p {{ margin: 5px 0; font-size: 12px; color: var(--muted); }}
+.receipt-meta {{ text-align: left; margin-top: 10px; }}
+@media (min-width: 768px) {{ .receipt-meta {{ text-align: right; margin-top: 0; }} }}
+.receipt-meta h2 {{ margin: 0; font-size: 16px; text-transform: uppercase; color: var(--emerald); }}
+.receipt-meta p {{ margin: 5px 0; font-size: 12px; font-weight: 600; color: var(--muted); }}
+table {{ width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 18px; font-size: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }}
+th {{ background: linear-gradient(105deg, var(--deep), var(--emerald)); color: #ffffff; text-align: left; padding: 11px 10px; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }}
+td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: #30463a; }}
+tbody tr:last-child td {{ border-bottom: 0; }}
+tbody tr:hover td {{ background: #f1f8f4; }}
+.summary-container {{ display: flex; justify-content: flex-end; }}
+.summary-table {{ width: 100%; }}
+@media (min-width: 768px) {{ .summary-table {{ width: 420px; }} }}
+.grand-total {{ background: linear-gradient(145deg, #063d27 0%, #012417 70%, #00150d 100%); color: white; padding: 20px; border-radius: 10px; margin-top: 10px; box-shadow: 0 14px 28px rgba(1, 35, 22, .22), inset 0 1px 0 rgba(255,255,255,.16); }}
+.balance-info {{ font-size: 13px; line-height: 1.8; }}
+.balance-row {{ display: flex; justify-content: space-between; gap: 10px; }}
+.material-row {{ font-size: 18px; font-weight: 700; }}
+.final-balance-row {{ display: flex; justify-content: space-between; border-top: 1px solid rgba(206,255,225,.24); margin-top: 10px; padding-top: 10px; font-size: 18px; font-weight: 700; }}
+.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: #788c80; text-transform: uppercase; letter-spacing: .14em; }}
 .save-btn-container {{ text-align: center; margin-bottom: 25px; }}
-.save-img-btn {{ background-color: #1b5e20; color: white; border: none; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }}
-.save-img-btn:hover {{ background-color: #2e7d32; }}
+.save-img-btn {{ background: linear-gradient(105deg, #075c35, #0b8a50); color: white; border: 1px solid rgba(255,255,255,.22); padding: 12px 24px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; box-shadow: 0 8px 18px rgba(1,50,30,.22), inset 0 1px 0 rgba(255,255,255,.2); }}
+.save-img-btn:hover {{ background: linear-gradient(105deg, #0b7444, #10a461); transform: translateY(-1px); }}
 @media print {{ .save-btn-container {{ display: none; }} }}
 @media (max-width: 600px) {{
-    body {{ padding: 10px !important; }}
-    #receiptContent {{ width: 100%; padding: 16px !important; text-align: center; }}
-    #receiptContent > table {{ table-layout: fixed; font-size: 10px; }}
-    #receiptContent th, #receiptContent td {{ padding: 7px 3px !important; line-height: 1.25; }}
-    #receiptContent h1 {{ font-size: 20px !important; }}
-    #receiptContent h3 {{ font-size: 15px !important; }}
-    #receiptContent > table:first-child td {{ display: block; width: 100% !important; text-align: center !important; }}
-    #receiptContent > table:last-of-type td:last-child {{ width: 100% !important; text-align: center !important; }}
+    body {{ padding: 10px; }}
+    .receipt-container {{ padding: 18px; }}
+    table {{ font-size: 10px; }}
+    th, td {{ padding: 7px 5px; line-height: 1.3; }}
+    .company-info h1 {{ font-size: 18px; }}
+    .receipt-meta h2 {{ font-size: 14px; }}
+    .grand-total {{ padding: 15px; }}
+    .material-row, .final-balance-row {{ font-size: 14px; }}
     .save-img-btn {{ max-width: 100%; padding: 10px 12px; font-size: 12px; }}
 }}
 </style>
 </head>
-<body style="font-family: 'Akira Expanded', 'Rajdhani', 'Orbitron', sans-serif; font-weight: 700; background-color: #f4f7f6; padding: 40px;">
+<body>
 <div class="save-btn-container">
 <button class="save-img-btn" onclick="saveAsImage()">SEE PHOTO & DOWNLOAD IMAGE (Phone & Laptop)</button>
 </div>
-<div id="receiptContent" style="max-width: 900px; margin: auto; background: white; border-top: 10px solid #1b5e20; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-<table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-<tr>
-<td>
-<h1 style="color: #1b5e20; margin: 0; text-transform: uppercase;">Ailyn House Project</h1>
-<p style="color: #555; margin: 5px 0 0 0;">Official Labor Tally</p>
-<p style="color: #777; font-size: 14px; margin: 0;">Management System v3.6 Enterprise</p>
-</td>
-<td style="text-align: right;">
-<h3 style="color: #1b5e20; margin: 0;">{custom_title}</h3>
-<p style="color: #555; font-size: 14px; margin: 5px 0 0 0;">Date: {date_str}</p>
-<p style="color: #777; font-size: 12px; margin: 5px 0 0 0;">Account: {RECEIVER_EMAIL}</p>
-</td>
-</tr>
-</table>
-<div style="border-bottom: 2px solid #eee; margin-bottom: 30px;"></div>
-<table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+<div class="receipt-container" id="receiptContent">
+<div class="header">
+<div class="company-info">
+<div class="company-brand"><img src="{AILYN_LOGO_DATA}" alt="Ailyn House logo"><div>
+<h1>AILYN HOUSE PROJECT</h1>
+<p>Official Labor & Payroll Summary</p>
+<p>Management System {APP_VERSION}</p>
+<p>Backup Receiver: <i>{RECEIVER_AILYN}</i></p>
+</div></div>
+</div>
+<div class="receipt-meta">
+<h2>{custom_title}</h2>
+<p>Date: {date_str}</p>
+<p>Time: {time_str}</p>
+</div>
+</div>
+<table>
 <thead>
-<tr style="background-color: #1b5e20; color: white; text-transform: uppercase; font-size: 14px;">
-<th style="padding: 12px; text-align: left;">Worker Name</th>
-<th style="padding: 12px; text-align: center;">Role</th>
-<th style="padding: 12px; text-align: center;">Days / Point</th>
-<th style="padding: 12px; text-align: right;">Gross Pay</th>
-<th style="padding: 12px; text-align: right;">C.A.</th>
-<th style="padding: 12px; text-align: right;">Net Pay</th>
+<tr>
+<th>Worker</th>
+<th>Role</th>
+<th>Days</th>
+<th>Gross Pay</th>
+<th>C.A.</th>
+<th>Net Pay</th>
 </tr>
 </thead>
 <tbody>"""
 
     for r in labor_records:
         role_display = r.get('role', 'Labor')
-        gross = r.get('gross_pay', r['days'] * r['rate'])
+        gross = float(r.get('gross_pay', (float(r.get('days', 0)) * float(r.get('rate', 0)))))
+        ca = float(r.get('ca', 0) or 0)
+        net = float(r.get('net', 0) or 0)
         html += f"""
 <tr>
-<td style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold;">{r['name']}</td>
-<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: center;">{role_display}</td>
-<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: center;">{r['days']:.1f}</td>
-<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">{gross:,.2f}</td>
-<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; color: #d32f2f;">({r['ca']:,.2f})</td>
-<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #1b5e20;">{r['net']:,.2f}</td>
+<td>{r.get('name', 'Worker')}</td>
+<td>{role_display}</td>
+<td>{float(r.get('days', 0) or 0):.1f}</td>
+<td>PHP {gross:,.2f}</td>
+<td style="color: #d32f2f;">(PHP {ca:,.2f})</td>
+<td style="font-weight: bold; color: #1b5e20;">PHP {net:,.2f}</td>
 </tr>"""
 
     if expense_records:
@@ -629,48 +660,64 @@ body {{ font-family: 'Akira Expanded', 'Rajdhani', 'Orbitron', sans-serif !impor
 <tr>
 <td colspan="6" style="padding: 12px 0;"></td>
 </tr>
-<tr style="background-color: #388e3c; color: white; text-transform: uppercase; font-size: 14px;">
-<th colspan="5" style="padding: 10px; text-align: left;">Expense Description</th>
-<th style="padding: 10px; text-align: right;">Amount</th>
+<tr>
+<th colspan="5">Expense Description</th>
+<th>Amount</th>
 </tr>"""
         for e in expense_records:
+            name = e.get('item', 'Payroll Expense')
+            amount = float(e.get('price', 0) or 0)
             html += f"""
 <tr>
-<td colspan="5" style="padding: 10px; border-bottom: 1px solid #ddd;">{e['item']}</td>
-<td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold;">{e['price']:,.2f}</td>
+<td colspan="5">{name}</td>
+<td style="font-weight: bold;">PHP {amount:,.2f}</td>
 </tr>"""
 
     html += f"""
 </tbody>
 </table>
-<table style="width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px;">
-<tr style="border-top: 2px solid #bbb;">
-<td style="padding: 12px; font-weight: bold; text-align: right; font-size: 15px;">Subtotal Expenses:</td>
-<td style="padding: 12px; width: 180px; text-align: right; font-weight: bold; font-size: 15px; color: #333;">PHP {sub_total:,.2f}</td>
-</tr>"""
+<div class="summary-container">
+<div class="summary-table">
+<div class="grand-total">
+<div class="balance-info">
+<div class="balance-row material-row">
+<span>Labor Total:</span>
+<span>PHP {total_labor:,.2f}</span>
+</div>
+<div class="balance-row">
+<span>Payroll Expense Total:</span>
+<span>PHP {total_expenses:,.2f}</span>
+</div>
+<div class="balance-row">
+<span>Subtotal:</span>
+<span>PHP {sub_total:,.2f}</span>
+</div>
+"""
 
-    if remaining_money and remaining_money > 0:
+    if remaining_balance > 0:
         html += f"""
-<tr style="border-bottom: 2px solid #bbb;">
-<td style="padding: 12px; font-weight: bold; text-align: right; color: #d32f2f; font-size: 15px;">Remaining/Leftover Money:</td>
-<td style="padding: 12px; width: 180px; text-align: right; font-weight: bold; color: #d32f2f; font-size: 15px;">-PHP {remaining_money:,.2f}</td>
-</tr>"""
+<div class="balance-row" style="color: #a5d6a7;">
+<span>Remaining Money:</span>
+<span>PHP {remaining_balance:,.2f}</span>
+</div>"""
+    elif remaining_balance < 0:
+        html += f"""
+<div class="balance-row" style="color: #f3b3b3;">
+<span>Deduction:</span>
+<span>PHP {abs(remaining_balance):,.2f}</span>
+</div>"""
 
     html += f"""
-</table>
-<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-<tr>
-<td></td>
-<td style="width: 350px; background: #1b5e20; color: white; padding: 20px; border-radius: 8px; text-align: right;">
-<span style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Final Output Amount</span><br>
-<span style="font-size: 32px; font-weight: bold; margin-top: 5px; display: inline-block;">PHP {grand_total:,.2f}</span>
-</td>
-</tr>
-</table>
-<div style="text-align: center; margin-top: 60px; border-top: 1px solid #eee; padding-top: 20px;">
-<p style="color: #999; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;">
-THIS DOCUMENT WAS ELECTRONICALLY GENERATED AND IS VALID WITHOUT SIGNATURE.
-</p>
+<div class="final-balance-row">
+<span>FINAL PAYROLL</span>
+<span style="color: {balance_color};">PHP {grand_total:,.2f}</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="footer">
+This document was electronically generated and is valid without signature.
 </div>
 </div>
 <script>

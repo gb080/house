@@ -481,6 +481,8 @@ th.desccol {{ color: #ffffff; }}
 <td class="totalcol">PHP {float(r['amount']):,.2f}</td>
 </tr>"""
 
+    show_budget_summary = budget > 0 or excess_total > 0
+
     html += f"""
 </tbody>
 </table>
@@ -492,6 +494,10 @@ th.desccol {{ color: #ffffff; }}
 <span>Material/Expense Total:</span>
 <span>PHP {material_total:,.2f}</span>
 </div>
+"""
+
+    if show_budget_summary:
+        html += f"""
 <div class="balance-row" style="font-size: 13px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 4px;">
 <span>Excess Money Total:</span>
 <span style="color: #a5d6a7;">PHP {excess_total:,.2f}</span>
@@ -501,13 +507,14 @@ th.desccol {{ color: #ffffff; }}
 <span>PHP {budget:,.2f}</span>
 </div>
 """
-    if sobra_amount > 0:
+
+    if show_budget_summary and sobra_amount > 0:
         html += f"""
 <div class="final-balance-row">
 <span>EXCESS</span>
 <span style="color: #a5d6a7;">PHP {sobra_amount:,.2f}</span>
 </div>"""
-    if kulang_amount > 0:
+    if show_budget_summary and kulang_amount > 0:
         html += f"""
 <div class="final-balance-row">
 <span>SHORTAGE</span>

@@ -49,3 +49,36 @@ def test_write_excel_keeps_payroll_expense_amount_under_net_column(tmp_path):
     assert sheet.max_column == 11
     assert sheet.cell(2, 5).value == "Permit"
     assert sheet.cell(2, 11).value == 500
+
+
+def test_build_html_report_hides_budget_and_shortage_rows_when_not_provided():
+    build_html_report, _ = load_function(
+        "build_html_report",
+        {
+            "AILYN_LOGO_DATA": "",
+            "APP_VERSION": "",
+            "RECEIVER_AILYN": "",
+            "get_balance": lambda: 0.0,
+            "manila_now": lambda: datetime(2026, 10, 8, tzinfo=ZoneInfo("Asia/Manila")),
+        },
+    )
+
+    html = build_html_report(
+        [
+            {
+                "type": "material",
+                "date": "Oct 08, 2026",
+                "qty": 1,
+                "name": "Cement",
+                "amount": 500.0,
+                "delivery": 0.0,
+                "price": 500.0,
+            }
+        ],
+        0.0,
+    )
+
+    assert "Excess Money Total:" not in html
+    assert "Total Budget:" not in html
+    assert "SHORTAGE" not in html
+    assert "FINAL BALANCE" in html

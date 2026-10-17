@@ -3661,7 +3661,7 @@ elif view == "add_labor":
     st.subheader("👷 ADD LABOR ACCOUNT")
     st.caption("Click a role button below (Cashier POS Style) to select the work role quickly:")
 
-    col_r1, col_r2, col_r3 = st.columns(3)
+    col_r1, col_r2, col_r3, col_r4 = st.columns(4)
     with col_r1:
         if st.button("LABOR\n₱500 / day", use_container_width=True):
             st.session_state.selected_role = "Labor"
@@ -3671,6 +3671,10 @@ elif view == "add_labor":
     with col_r3:
         if st.button("FORMAN\n₱800 / day", use_container_width=True):
             st.session_state.selected_role = "Forman"
+
+    with col_r4:
+            if st.button("HED LABOR\n₱250 / day", use_container_width=True):
+                st.session_state.selected_role = "HED LABOR"        
 
     active_role = st.session_state.selected_role
     st.markdown(f"""

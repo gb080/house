@@ -402,10 +402,9 @@ def build_html_report(records, budget, custom_title="INVENTORY RECEIPT"):
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap');
 :root {{ --ink: #10251b; --muted: #64776c; --emerald: #075c35; --deep: #03281a; --line: #dbe8df; --champagne: #b3945a; }}
 * {{ box-sizing: border-box; }}
-body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: linear-gradient(135deg, #eaf2ed 0%, #f8faf8 52%, #e4efe8 100%); margin: 0; padding: 20px; color: var(--ink); }}
+body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e6; margin: 0; padding: 20px; color: var(--ink); }}
 .receipt-meta h2 {{ font-family: 'Orbitron', sans-serif; font-weight: 800; letter-spacing: .08em; }}
-.receipt-container {{ max-width: 1000px; margin: auto; background: linear-gradient(145deg, #ffffff 0%, #fbfdfb 62%, #f1f7f3 100%); padding: 30px; border-radius: 14px; box-shadow: 0 22px 50px rgba(16, 52, 34, .16), 0 2px 0 rgba(255,255,255,.9) inset; border-top: 8px solid var(--deep); position: relative; overflow: hidden; }}
-.receipt-container::before {{ content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,.7), transparent 26%, transparent 72%, rgba(7,92,53,.05)); }}
+.receipt-container {{ max-width: 1000px; margin: auto; background: #e6e6e6; padding: 30px; border-radius: 14px; box-shadow: 0 22px 50px rgba(16, 52, 34, .16), 0 2px 0 rgba(255,255,255,.9) inset; border-top: 8px solid var(--deep); position: relative; overflow: hidden; }}
 .header {{ position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; margin-bottom: 26px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }}
 .company-brand {{ display: flex; align-items: center; gap: 12px; }}
 .company-brand img {{ width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(0 5px 9px rgba(0, 45, 25, .22)); }}
@@ -570,10 +569,9 @@ def generate_payroll_html(labor_records, expense_records, remaining_money=0.0, c
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap');
 :root {{ --ink: #10251b; --muted: #64776c; --emerald: #075c35; --deep: #03281a; --line: #dbe8df; --champagne: #b3945a; }}
 * {{ box-sizing: border-box; }}
-body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: linear-gradient(135deg, #eaf2ed 0%, #f8faf8 52%, #e4efe8 100%); margin: 0; padding: 20px; color: var(--ink); }}
+body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e6; margin: 0; padding: 20px; color: var(--ink); }}
 .receipt-meta h2 {{ font-family: 'Orbitron', sans-serif; font-weight: 800; letter-spacing: .08em; }}
-.receipt-container {{ max-width: 1000px; margin: auto; background: linear-gradient(145deg, #ffffff 0%, #fbfdfb 62%, #f1f7f3 100%); padding: 30px; border-radius: 14px; box-shadow: 0 22px 50px rgba(16, 52, 34, .16), 0 2px 0 rgba(255,255,255,.9) inset; border-top: 8px solid var(--deep); position: relative; overflow: hidden; }}
-.receipt-container::before {{ content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,.7), transparent 26%, transparent 72%, rgba(7,92,53,.05)); }}
+.receipt-container {{ max-width: 1000px; margin: auto; background: #e6e6e6; padding: 30px; border-radius: 14px; box-shadow: 0 22px 50px rgba(16, 52, 34, .16), 0 2px 0 rgba(255,255,255,.9) inset; border-top: 8px solid var(--deep); position: relative; overflow: hidden; }}
 .header {{ position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }}
 .company-brand {{ display: flex; align-items: center; gap: 12px; }}
 .company-brand img {{ width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 5px 9px rgba(0, 45, 25, .22)); }}
@@ -1133,16 +1131,43 @@ def budget_dialog():
 
 @st.dialog("Add Labor Account", width="small")
 def payroll_labor_dialog():
-    role = st.selectbox("Role", list(FULL_DAY_RATES), key="popup_labor_role")
+    custom_role_option = "__CUSTOM_ROLE__"
+    recorded_roles = list(dict.fromkeys(
+        str(record.get("role", ""))
+        for record in st.session_state.labor_records
+        if record.get("role")
+    ))
+    role_options = list(dict.fromkeys([*FULL_DAY_RATES, *recorded_roles, custom_role_option]))
+    selected_role = st.selectbox("Role", role_options, key="popup_labor_role")
+    if selected_role == custom_role_option:
+        role = st.text_input("Custom labor type", key="popup_custom_labor_type").strip().upper()
+        rate = st.number_input(
+            "Labor price (PHP/day)",
+            min_value=0.01,
+            value=None,
+            placeholder="Enter daily price",
+            key="popup_custom_labor_rate",
+        )
+        rate = float(rate) if rate is not None else None
+    else:
+        role = selected_role
+        rate = FULL_DAY_RATES.get(
+            role,
+            next(
+                (float(record["rate"]) for record in st.session_state.labor_records
+                 if record.get("role") == role and record.get("rate") is not None),
+                0.0,
+            ),
+        )
     worker = st.text_input("Worker name", key="popup_labor_worker")
     days = st.number_input("Worked days", min_value=0.0, value=None, placeholder="Enter days", key="popup_labor_days")
     cash_advance = st.number_input("Cash advance", min_value=0.0, value=0.0, step=50.0, key="popup_labor_ca")
     if st.button("SAVE LABOR ACCOUNT", use_container_width=True, key="popup_save_labor"):
         worked_days = float(days or 0.0)
-        if not worker.strip() or worked_days <= 0:
-            st.warning("Enter a worker name and valid worked days.")
+        if not worker.strip() or worked_days <= 0 or not role or rate is None or rate <= 0:
+            st.warning("Enter a worker name, valid worked days, labor type, and daily price.")
             return
-        gross_pay, full_pay, partial_pay = calculate_labor_pay(worked_days, role)
+        gross_pay, full_pay, partial_pay = calculate_labor_pay(worked_days, role, rate)
         st.session_state.labor_records.append({
             "id": str(uuid.uuid4()),
             "date": manila_now().strftime("%b %d, %Y"),
@@ -1150,7 +1175,7 @@ def payroll_labor_dialog():
             "name": worker.strip().upper(),
             "role": role,
             "days": worked_days,
-            "rate": FULL_DAY_RATES[role],
+            "rate": rate,
             "gross_pay": gross_pay,
             "full_pay": full_pay,
             "partial_pay": partial_pay,
@@ -3311,7 +3336,11 @@ elif view == "payroll_dashboard":
     with left:
         st.subheader("Role summary")
         role_rows = []
-        for role in FULL_DAY_RATES:
+        payroll_roles = list(dict.fromkeys([
+            *FULL_DAY_RATES,
+            *(str(record.get("role")) for record in st.session_state.labor_records if record.get("role")),
+        ]))
+        for role in payroll_roles:
             role_records = [r for r in st.session_state.labor_records if r.get("role") == role]
             role_rows.append({
                 "Role": role,
@@ -3659,31 +3688,48 @@ elif view == "ledger":
 
 elif view == "add_labor":
     st.subheader("👷 ADD LABOR ACCOUNT")
-    st.caption("Click a role button below (Cashier POS Style) to select the work role quickly:")
+    st.caption("Choose a standard role or select CUSTOM to enter a labor type and daily price:")
 
-    col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+    col_r1, col_r2, col_r3, col_r4, col_custom = st.columns(5)
     with col_r1:
-        if st.button("LABOR\n₱500 / day", use_container_width=True):
+        if st.button(f"LABOR\n₱{FULL_DAY_RATES['Labor']:,.0f} / day", use_container_width=True):
             st.session_state.selected_role = "Labor"
     with col_r2:
-        if st.button("SKILL\n₱650 / day", use_container_width=True):
+        if st.button(f"SKILL\n₱{FULL_DAY_RATES['Skill']:,.0f} / day", use_container_width=True):
             st.session_state.selected_role = "Skill"
     with col_r3:
-        if st.button("FORMAN\n₱800 / day", use_container_width=True):
+        if st.button(f"FORMAN\n₱{FULL_DAY_RATES['Forman']:,.0f} / day", use_container_width=True):
             st.session_state.selected_role = "Forman"
 
     with col_r4:
-            if st.button("HED LABOR\n₱250 / day", use_container_width=True):
-                st.session_state.selected_role = "HED LABOR"        
+        if st.button(f"HED LABOR\n₱{FULL_DAY_RATES['HED LABOR']:,.0f} / day", use_container_width=True):
+            st.session_state.selected_role = "HED LABOR"
+    with col_custom:
+        if st.button("CUSTOM\nSet type and price", use_container_width=True):
+            st.session_state.selected_role = "__CUSTOM_ROLE__"
 
     active_role = st.session_state.selected_role
+    is_custom_role = active_role == "__CUSTOM_ROLE__"
+    displayed_role = "CUSTOM" if is_custom_role else active_role
+    displayed_rate = "Enter below" if is_custom_role else f"₱{FULL_DAY_RATES[active_role]:,.2f}/day"
     st.markdown(f"""
     <div class="pos-role-box">
-      CURRENTLY SELECTED ROLE: <span style="color:#4ade80; font-size:20px;">{active_role.upper()}</span> (₱{FULL_DAY_RATES[active_role]:,.2f}/day)
+      CURRENTLY SELECTED ROLE: <span style="color:#4ade80; font-size:20px;">{displayed_role.upper()}</span> ({displayed_rate})
     </div>
     """, unsafe_allow_html=True)
 
     with st.form(key="labor_input_form", clear_on_submit=True):
+        if is_custom_role:
+            custom_role_name = st.text_input("Custom Labor Type", placeholder="Enter work type")
+            custom_daily_rate = st.number_input(
+                "Labor Price (PHP/day)",
+                min_value=0.01,
+                value=None,
+                placeholder="Enter daily price",
+            )
+        else:
+            custom_role_name = ""
+            custom_daily_rate = None
         name = st.text_input("Worker Name")
         days = st.number_input("Worked Days / Point", min_value=0.0, value=None, placeholder="Enter days")
         ca = st.number_input("Cash Advance (C.A.)", min_value=0.0, value=None, placeholder="0.00")
@@ -3692,16 +3738,21 @@ elif view == "add_labor":
         if submitted:
             d = float(days or 0.0)
             c = float(ca or 0.0)
-            if d > 0 and name.strip():
-                gross_pay, full_pay, partial_pay = calculate_labor_pay(d, active_role)
+            role_name = custom_role_name.strip().upper() if is_custom_role else active_role
+            rate = (
+                float(custom_daily_rate)
+                if is_custom_role and custom_daily_rate is not None
+                else FULL_DAY_RATES.get(active_role, 0.0)
+            )
+            if d > 0 and name.strip() and role_name and rate > 0:
+                gross_pay, full_pay, partial_pay = calculate_labor_pay(d, role_name, rate)
                 net = gross_pay - c
-                rate = FULL_DAY_RATES.get(active_role, 0.0)
                 st.session_state.labor_records.append({
                     "id": str(uuid.uuid4()),
                     "date": manila_now().strftime("%b %d, %Y"),
                     "recorded_at": manila_now().isoformat(),
                     "name": name.upper(),
-                    "role": active_role,
+                    "role": role_name,
                     "days": d,
                     "rate": rate,
                     "gross_pay": gross_pay,
@@ -3709,7 +3760,7 @@ elif view == "add_labor":
                     "net": net
                 })
                 persist_state()
-                st.success(f"Record for {name.upper()} ({active_role}, {d:.1f} day) added. Net: PHP {net:,.2f}")
+                st.success(f"Record for {name.upper()} ({role_name}, {d:.1f} day) added. Net: PHP {net:,.2f}")
                 st.rerun()
             else:
                 st.warning("Please enter a worker name and valid worked days/points.")
@@ -3763,11 +3814,29 @@ elif view == "payroll_ledger":
             if st.session_state.editing_labor_index == i:
                 with st.form(key=f"edit_labor_form_{i}"):
                     edited_worker = st.text_input("Worker Name", value=r.get("name", ""))
+                    role_options = list(dict.fromkeys([
+                        *FULL_DAY_RATES,
+                        *(str(record.get("role")) for record in st.session_state.labor_records
+                          if record.get("role")),
+                    ]))
                     edited_role = st.selectbox(
                         "Role",
-                        list(FULL_DAY_RATES),
-                        index=list(FULL_DAY_RATES).index(r.get("role", "Labor")),
+                        role_options,
+                        index=role_options.index(r.get("role", "Labor")),
                     )
+                    if edited_role in FULL_DAY_RATES:
+                        edited_rate = FULL_DAY_RATES[edited_role]
+                    else:
+                        existing_rate = next(
+                            (float(record["rate"]) for record in st.session_state.labor_records
+                             if record.get("role") == edited_role and record.get("rate") is not None),
+                            float(r.get("rate", 0.0)),
+                        )
+                        edited_rate = st.number_input(
+                            "Labor Price (PHP/day)",
+                            min_value=0.01,
+                            value=existing_rate,
+                        )
                     edited_days = st.number_input(
                         "Worked Days / Point",
                         min_value=0.0,
@@ -3781,13 +3850,15 @@ elif view == "payroll_ledger":
                     save_labor = st.form_submit_button("SAVE EDIT")
                     cancel_labor = st.form_submit_button("CANCEL")
                 if save_labor:
-                    if edited_worker.strip() and edited_days > 0:
-                        gross_pay, full_pay, partial_pay = calculate_labor_pay(float(edited_days), edited_role)
+                    if edited_worker.strip() and edited_days > 0 and edited_rate > 0:
+                        gross_pay, full_pay, partial_pay = calculate_labor_pay(
+                            float(edited_days), edited_role, edited_rate
+                        )
                         r.update({
                             "name": edited_worker.strip().upper(),
                             "role": edited_role,
                             "days": float(edited_days),
-                            "rate": FULL_DAY_RATES[edited_role],
+                            "rate": float(edited_rate),
                             "gross_pay": gross_pay,
                             "full_pay": full_pay,
                             "partial_pay": partial_pay,

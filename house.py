@@ -1236,10 +1236,11 @@ def add_tx(name, price, qty, delivery, ttype, sender, record_date=None, details=
     if p <= 0 or q <= 0:
         return False
     amount = (p * q) + d if ttype == "material" else p
+    selected_date = record_date or manila_now().date()
     st.session_state.records.append({
         "id": str(time.time()),
-        "date": manila_now().strftime("%b %d, %Y"),
-        "recorded_at": datetime.combine(record_date or manila_now().date(), datetime.min.time(), PHILIPPINES_TZ).isoformat(),
+        "date": selected_date.strftime("%b %d, %Y"),
+        "recorded_at": datetime.combine(selected_date, datetime.min.time(), PHILIPPINES_TZ).isoformat(),
         "name": name.upper(),
         "price": p,
         "qty": q,
@@ -3543,13 +3544,14 @@ elif view == "material":
     st.subheader("➕ ADD MATERIAL")
     with st.form(key="material_form", clear_on_submit=True):
         name = st.text_input("Material Name", key="material_name")
+        purchase_date = st.date_input("Purchase Date", value=manila_now().date(), key="material_purchase_date")
         price = st.number_input("Price", min_value=0.01, value=None, placeholder="0.00", key="material_price")
         qty = st.number_input("Qty", min_value=1, value=None, placeholder="1", key="material_qty")
         delivery = st.number_input("Delivery", min_value=0.0, value=None, placeholder="0.00", key="material_delivery")
         sender = st.selectbox("Sender", ["Garr", "Aily"])
         submitted = st.form_submit_button(label="SAVE MATERIAL")
         if submitted:
-            ok = add_tx(name, price, qty, delivery or 0.0, "material", sender)
+            ok = add_tx(name, price, qty, delivery or 0.0, "material", sender, record_date=purchase_date)
             if ok:
                 st.success("Saved! Ready for next order.")
                 st.rerun()

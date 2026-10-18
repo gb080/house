@@ -1,7 +1,9 @@
 import ast
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 import re
+import time
+from types import SimpleNamespace
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill
@@ -33,6 +35,25 @@ def test_parse_scanned_receipt_extracts_material_details():
     result = parse_scanned_receipt("Cement\nQty: 4\nPHP 1,200.00\nDelivery 80")
 
     assert result == {"name": "Cement", "price": 300.0, "qty": 4, "delivery": 80.0}
+
+
+def test_add_tx_uses_selected_purchase_date():
+    records = []
+    add_tx, _ = load_function(
+        "add_tx",
+        {
+            "datetime": datetime,
+            "time": time,
+            "PHILIPPINES_TZ": ZoneInfo("Asia/Manila"),
+            "st": SimpleNamespace(session_state=SimpleNamespace(records=records)),
+            "persist_state": lambda: None,
+        },
+    )
+    purchase_date = date(2025, 4, 12)
+
+    assert add_tx("Cement", 100, 2, 10, "material", "Garr", record_date=purchase_date)
+    assert records[0]["date"] == "Apr 12, 2025"
+    assert records[0]["recorded_at"].startswith("2025-04-12T00:00:00")
 
 
 def test_write_excel_keeps_payroll_expense_amount_under_net_column(tmp_path):

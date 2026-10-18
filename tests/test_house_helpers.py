@@ -112,7 +112,9 @@ def test_build_html_report_hides_budget_and_shortage_rows_when_not_provided():
     assert "linear-gradient(145deg, #063d27" in html
     assert "font-family: 'Orbitron', sans-serif" in html
     assert "--ink: #064e3b" in html
-    assert "td.desccol { font-weight: 700; color: var(--ink); background: #e8f5e9; }" in html
+    assert "td.desccol { font-weight: 700; color: var(--ink); }" in html
+    assert "td { padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: var(--ink); }" in html
+    assert "background: #e8f5e9" not in html
 
 
 def test_generate_payroll_html_uses_light_gray_background_and_keeps_layout():
@@ -141,4 +143,6 @@ def test_generate_payroll_html_uses_light_gray_background_and_keeps_layout():
     assert "linear-gradient(145deg, #063d27" in html
     assert "font-family: 'Orbitron', sans-serif" in html
     assert "--ink: #064e3b" in html
+    assert ".expense-description { color: var(--ink); }" in html
+    assert "background: #e8f5e9" not in html
     assert '<td class="expense-description" colspan="5">Cement</td>' in html

@@ -409,20 +409,20 @@ body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e
 .company-brand {{ display: flex; align-items: center; gap: 12px; }}
 .company-brand img {{ width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(0 5px 9px rgba(0, 45, 25, .22)); }}
 .company-info h1 {{ color: var(--deep); margin: 0; font-family: 'Orbitron', sans-serif; font-size: 29px; letter-spacing: .02em; line-height: 1.1; }}
-.company-info p {{ margin: 5px 0; font-size: 12px; color: var(--muted); }}
+.company-info p {{ margin: 5px 0; font-size: 12px; color: var(--ink); }}
 .receipt-meta {{ text-align: left; margin-top: 10px; }}
 @media (min-width: 768px) {{ .receipt-meta {{ text-align: right; margin-top: 0; }} }}
-.receipt-meta h2 {{ margin: 0; font-size: 16px; text-transform: uppercase; color: var(--emerald); }}
-.receipt-meta p {{ margin: 5px 0; font-size: 12px; font-weight: 600; color: var(--muted); }}
+.receipt-meta h2 {{ margin: 0; font-size: 16px; text-transform: uppercase; color: var(--deep); }}
+.receipt-meta p {{ margin: 5px 0; font-size: 12px; font-weight: 600; color: var(--ink); }}
 table {{ width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 20px; font-size: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }}
 th {{ background: linear-gradient(105deg, var(--deep), var(--emerald)); color: #ffffff; text-align: left; padding: 11px 10px; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }}
-td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: #14532d; }}
+td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: var(--ink); }}
 tbody tr:last-child td {{ border-bottom: 0; }}
 tbody tr:hover td {{ background: #f1f8f4; }}
 .qty-col, .desccol, .pricecol, .deliverycol, .totalcol {{ text-align: left; }}
-td.desccol {{ font-weight: 700; color: var(--ink); background: #e8f5e9; }}
+td.desccol {{ font-weight: 700; color: var(--ink); }}
 th.desccol {{ color: #ffffff; }}
-.expense-description {{ background: #e8f5e9; color: var(--ink); }}
+.expense-description {{ color: var(--ink); }}
 .summary-container {{ display: flex; justify-content: flex-end; }}
 .summary-table {{ width: 100%; }}
 @media (min-width: 768px) {{ .summary-table {{ width: 420px; }} }}
@@ -431,7 +431,7 @@ th.desccol {{ color: #ffffff; }}
 .balance-row {{ display: flex; justify-content: space-between; }}
 .material-row {{ font-size: 18px; font-weight: 700; color: #f5fff8; }}
 .final-balance-row {{ display: flex; justify-content: space-between; border-top: 1px solid rgba(206,255,225,.24); margin-top: 10px; padding-top: 10px; font-size: 18px; font-weight: 700; }}
-.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; }}
+.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: var(--ink); text-transform: uppercase; letter-spacing: .14em; }}
 .save-btn-container {{ text-align: center; margin-bottom: 25px; }}
 .save-img-btn {{ background: linear-gradient(105deg, #075c35, #0b8a50); color: white; border: 1px solid rgba(255,255,255,.22); padding: 12px 24px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; box-shadow: 0 8px 18px rgba(1,50,30,.22), inset 0 1px 0 rgba(255,255,255,.2); }}
 .save-img-btn:hover {{ background: linear-gradient(105deg, #0b7444, #10a461); transform: translateY(-1px); }}
@@ -577,17 +577,17 @@ body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e
 .company-brand {{ display: flex; align-items: center; gap: 12px; }}
 .company-brand img {{ width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 5px 9px rgba(0, 45, 25, .22)); }}
 .company-info h1 {{ color: var(--deep); margin: 0; font-family: 'Orbitron', sans-serif; font-size: 24px; letter-spacing: .02em; }}
-.company-info p {{ margin: 5px 0; font-size: 12px; color: var(--muted); }}
+.company-info p {{ margin: 5px 0; font-size: 12px; color: var(--ink); }}
 .receipt-meta {{ text-align: left; margin-top: 10px; }}
 @media (min-width: 768px) {{ .receipt-meta {{ text-align: right; margin-top: 0; }} }}
-.receipt-meta h2 {{ margin: 0; font-size: 16px; text-transform: uppercase; color: var(--emerald); }}
-.receipt-meta p {{ margin: 5px 0; font-size: 12px; font-weight: 600; color: var(--muted); }}
+.receipt-meta h2 {{ margin: 0; font-size: 16px; text-transform: uppercase; color: var(--deep); }}
+.receipt-meta p {{ margin: 5px 0; font-size: 12px; font-weight: 600; color: var(--ink); }}
 table {{ width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 18px; font-size: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }}
 th {{ background: linear-gradient(105deg, var(--deep), var(--emerald)); color: #ffffff; text-align: left; padding: 11px 10px; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }}
-td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: #14532d; }}
+td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: var(--ink); }}
 tbody tr:last-child td {{ border-bottom: 0; }}
 tbody tr:hover td {{ background: #f1f8f4; }}
-.expense-description {{ background: #e8f5e9; color: var(--ink); }}
+.expense-description {{ color: var(--ink); }}
 .summary-container {{ display: flex; justify-content: flex-end; }}
 .summary-table {{ width: 100%; }}
 @media (min-width: 768px) {{ .summary-table {{ width: 420px; }} }}
@@ -596,7 +596,7 @@ tbody tr:hover td {{ background: #f1f8f4; }}
 .balance-row {{ display: flex; justify-content: space-between; gap: 10px; }}
 .material-row {{ font-size: 18px; font-weight: 700; }}
 .final-balance-row {{ display: flex; justify-content: space-between; border-top: 1px solid rgba(206,255,225,.24); margin-top: 10px; padding-top: 10px; font-size: 18px; font-weight: 700; }}
-.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; }}
+.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: var(--ink); text-transform: uppercase; letter-spacing: .14em; }}
 .save-btn-container {{ text-align: center; margin-bottom: 25px; }}
 .save-img-btn {{ background: linear-gradient(105deg, #075c35, #0b8a50); color: white; border: 1px solid rgba(255,255,255,.22); padding: 12px 24px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; box-shadow: 0 8px 18px rgba(1,50,30,.22), inset 0 1px 0 rgba(255,255,255,.2); }}
 .save-img-btn:hover {{ background: linear-gradient(105deg, #0b7444, #10a461); transform: translateY(-1px); }}

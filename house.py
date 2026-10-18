@@ -400,7 +400,7 @@ def build_html_report(records, budget, custom_title="INVENTORY RECEIPT"):
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap');
-:root {{ --ink: #10251b; --muted: #64776c; --emerald: #075c35; --deep: #03281a; --line: #dbe8df; --champagne: #b3945a; }}
+:root {{ --ink: #064e3b; --muted: #356b50; --emerald: #075c35; --deep: #03281a; --line: #dbe8df; --champagne: #b3945a; }}
 * {{ box-sizing: border-box; }}
 body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e6; margin: 0; padding: 20px; color: var(--ink); }}
 .receipt-meta h2 {{ font-family: 'Orbitron', sans-serif; font-weight: 800; letter-spacing: .08em; }}
@@ -416,12 +416,13 @@ body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e
 .receipt-meta p {{ margin: 5px 0; font-size: 12px; font-weight: 600; color: var(--muted); }}
 table {{ width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 20px; font-size: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }}
 th {{ background: linear-gradient(105deg, var(--deep), var(--emerald)); color: #ffffff; text-align: left; padding: 11px 10px; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }}
-td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: #30463a; }}
+td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: #14532d; }}
 tbody tr:last-child td {{ border-bottom: 0; }}
 tbody tr:hover td {{ background: #f1f8f4; }}
 .qty-col, .desccol, .pricecol, .deliverycol, .totalcol {{ text-align: left; }}
-td.desccol {{ font-weight: 700; color: var(--ink); }}
+td.desccol {{ font-weight: 700; color: var(--ink); background: #e8f5e9; }}
 th.desccol {{ color: #ffffff; }}
+.expense-description {{ background: #e8f5e9; color: var(--ink); }}
 .summary-container {{ display: flex; justify-content: flex-end; }}
 .summary-table {{ width: 100%; }}
 @media (min-width: 768px) {{ .summary-table {{ width: 420px; }} }}
@@ -430,7 +431,7 @@ th.desccol {{ color: #ffffff; }}
 .balance-row {{ display: flex; justify-content: space-between; }}
 .material-row {{ font-size: 18px; font-weight: 700; color: #f5fff8; }}
 .final-balance-row {{ display: flex; justify-content: space-between; border-top: 1px solid rgba(206,255,225,.24); margin-top: 10px; padding-top: 10px; font-size: 18px; font-weight: 700; }}
-.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: #788c80; text-transform: uppercase; letter-spacing: .14em; }}
+.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; }}
 .save-btn-container {{ text-align: center; margin-bottom: 25px; }}
 .save-img-btn {{ background: linear-gradient(105deg, #075c35, #0b8a50); color: white; border: 1px solid rgba(255,255,255,.22); padding: 12px 24px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; box-shadow: 0 8px 18px rgba(1,50,30,.22), inset 0 1px 0 rgba(255,255,255,.2); }}
 .save-img-btn:hover {{ background: linear-gradient(105deg, #0b7444, #10a461); transform: translateY(-1px); }}
@@ -567,7 +568,7 @@ def generate_payroll_html(labor_records, expense_records, remaining_money=0.0, c
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap');
-:root {{ --ink: #10251b; --muted: #64776c; --emerald: #075c35; --deep: #03281a; --line: #dbe8df; --champagne: #b3945a; }}
+:root {{ --ink: #064e3b; --muted: #356b50; --emerald: #075c35; --deep: #03281a; --line: #dbe8df; --champagne: #b3945a; }}
 * {{ box-sizing: border-box; }}
 body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e6; margin: 0; padding: 20px; color: var(--ink); }}
 .receipt-meta h2 {{ font-family: 'Orbitron', sans-serif; font-weight: 800; letter-spacing: .08em; }}
@@ -583,9 +584,10 @@ body {{ font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e
 .receipt-meta p {{ margin: 5px 0; font-size: 12px; font-weight: 600; color: var(--muted); }}
 table {{ width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 18px; font-size: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }}
 th {{ background: linear-gradient(105deg, var(--deep), var(--emerald)); color: #ffffff; text-align: left; padding: 11px 10px; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }}
-td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: #30463a; }}
+td {{ padding: 11px 10px; border-bottom: 1px solid #e5eee8; color: #14532d; }}
 tbody tr:last-child td {{ border-bottom: 0; }}
 tbody tr:hover td {{ background: #f1f8f4; }}
+.expense-description {{ background: #e8f5e9; color: var(--ink); }}
 .summary-container {{ display: flex; justify-content: flex-end; }}
 .summary-table {{ width: 100%; }}
 @media (min-width: 768px) {{ .summary-table {{ width: 420px; }} }}
@@ -594,7 +596,7 @@ tbody tr:hover td {{ background: #f1f8f4; }}
 .balance-row {{ display: flex; justify-content: space-between; gap: 10px; }}
 .material-row {{ font-size: 18px; font-weight: 700; }}
 .final-balance-row {{ display: flex; justify-content: space-between; border-top: 1px solid rgba(206,255,225,.24); margin-top: 10px; padding-top: 10px; font-size: 18px; font-weight: 700; }}
-.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: #788c80; text-transform: uppercase; letter-spacing: .14em; }}
+.footer {{ margin-top: 30px; text-align: center; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; }}
 .save-btn-container {{ text-align: center; margin-bottom: 25px; }}
 .save-img-btn {{ background: linear-gradient(105deg, #075c35, #0b8a50); color: white; border: 1px solid rgba(255,255,255,.22); padding: 12px 24px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; box-shadow: 0 8px 18px rgba(1,50,30,.22), inset 0 1px 0 rgba(255,255,255,.2); }}
 .save-img-btn:hover {{ background: linear-gradient(105deg, #0b7444, #10a461); transform: translateY(-1px); }}
@@ -674,7 +676,7 @@ tbody tr:hover td {{ background: #f1f8f4; }}
             amount = float(e.get('price', 0) or 0)
             html += f"""
 <tr>
-<td colspan="5">{name}</td>
+<td class="expense-description" colspan="5">{name}</td>
 <td style="font-weight: bold;">PHP {amount:,.2f}</td>
 </tr>"""
 

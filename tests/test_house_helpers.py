@@ -111,6 +111,8 @@ def test_build_html_report_hides_budget_and_shortage_rows_when_not_provided():
     assert "linear-gradient(105deg, var(--deep), var(--emerald))" in html
     assert "linear-gradient(145deg, #063d27" in html
     assert "font-family: 'Orbitron', sans-serif" in html
+    assert "--ink: #064e3b" in html
+    assert "td.desccol { font-weight: 700; color: var(--ink); background: #e8f5e9; }" in html
 
 
 def test_generate_payroll_html_uses_light_gray_background_and_keeps_layout():
@@ -123,9 +125,13 @@ def test_generate_payroll_html_uses_light_gray_background_and_keeps_layout():
         },
     )
 
-    html, total = generate_payroll_html([], [], custom_title="PAYROLL REPORT")
+    html, total = generate_payroll_html(
+        [{"name": "Worker", "role": "Builder", "days": 1, "rate": 100, "net": 100}],
+        [{"item": "Cement", "price": 50}],
+        custom_title="PAYROLL REPORT",
+    )
 
-    assert total == 0
+    assert total == 150
     assert "max-width: 1000px" in html
     assert "padding: 30px" in html
     assert "body { font-family: 'DM Sans', sans-serif; font-weight: 500; background: #e6e6e6" in html
@@ -134,3 +140,5 @@ def test_generate_payroll_html_uses_light_gray_background_and_keeps_layout():
     assert "linear-gradient(105deg, var(--deep), var(--emerald))" in html
     assert "linear-gradient(145deg, #063d27" in html
     assert "font-family: 'Orbitron', sans-serif" in html
+    assert "--ink: #064e3b" in html
+    assert '<td class="expense-description" colspan="5">Cement</td>' in html

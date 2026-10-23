@@ -35,12 +35,16 @@ def load_state():
 
 def save_state(state):
     _ensure_storage()
+    if state is None:
+        state = {}
+    if not isinstance(state, dict):
+        raise TypeError("state must be a dictionary")
     persistent_keys = {
         "records", "labor_records", "payroll_expenses", "planner_tasks", "budget",
         "budget_history", "remaining_money", "view", "receipt_archive", "project",
         "scanner_photos", "dark_mode", "client_notes", "app_settings", "messages",
     }
-    payload = {key: state.get(key) for key in persistent_keys if key in state}
+    payload = {key: state.get(key) for key in persistent_keys if key in state and state.get(key) is not None}
     encoded = json.dumps(payload, ensure_ascii=False, default=str)
     with sqlite3.connect(DB_FILE) as connection:
         connection.execute(

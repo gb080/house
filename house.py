@@ -47,21 +47,43 @@ def scan_photo_text(photo):
     return pytesseract.image_to_string(image).strip()
 
 
+def _as_float(value, default=0.0):
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return float(default)
+    if numeric != numeric or abs(numeric) == float("inf"):
+        return float(default)
+    return numeric
+
+
 def parse_scanned_receipt(text):
     """Extract conservative material-entry suggestions from OCR text."""
+    text = text or ""
     amount_pattern = r"(?:PHP|₱)\s*([0-9][0-9,]*(?:\.\d{1,2})?)"
     currency_amounts = [float(value.replace(",", "")) for value in re.findall(amount_pattern, text, re.IGNORECASE)]
     all_amounts = [float(value.replace(",", "")) for value in re.findall(r"\b[0-9][0-9,]*\.\d{2}\b", text)]
     amounts = currency_amounts or all_amounts
     quantity_match = re.search(r"\b(?:qty|quantity)\s*[:x-]?\s*(\d+)\b|\b(\d+)\s*(?:pcs?|pieces?|units?|x)\b", text, re.IGNORECASE)
-    quantity = int(next(value for value in quantity_match.groups() if value)) if quantity_match else 1
+    quantity = 1
+    if quantity_match:
+        for candidate in quantity_match.groups():
+            if candidate and candidate.isdigit():
+                quantity = int(candidate)
+                break
     delivery_match = re.search(r"delivery\D+([0-9][0-9,]*(?:\.\d{1,2})?)", text, re.IGNORECASE)
-    delivery = float(delivery_match.group(1).replace(",", "")) if delivery_match else 0.0
+    if delivery_match:
+        try:
+            delivery = float(delivery_match.group(1).replace(",", ""))
+        except ValueError:
+            delivery = 0.0
+    else:
+        delivery = 0.0
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     name = next((line for line in lines if not re.search(r"(?:php|₱|total|qty|quantity|delivery|receipt|invoice|date)", line, re.IGNORECASE)), "")
     total = amounts[-1] if amounts else 0.0
     price = total / quantity if quantity > 0 else total
-    return {"name": name[:120], "price": price, "qty": quantity, "delivery": delivery}
+    return {"name": name[:120], "price": price, "qty": max(1, quantity), "delivery": delivery}
 
 
 def normalize_photo_bytes(photo_bytes, mime_type="image/jpeg"):
@@ -96,16 +118,27 @@ def load_state():
 
 
 def month_key(record):
+    if not isinstance(record, dict):
+        return manila_now().strftime("%Y-%m")
     recorded_at = record.get("recorded_at")
     if recorded_at:
         try:
-            return datetime.fromisoformat(recorded_at).strftime("%Y-%m")
-        except ValueError:
+            if isinstance(recorded_at, str):
+                return datetime.fromisoformat(recorded_at).strftime("%Y-%m")
+            if hasattr(recorded_at, "strftime"):
+                return recorded_at.strftime("%Y-%m")
+        except (TypeError, ValueError):
             pass
-    try:
-        return datetime.strptime(record.get("date", ""), "%b %d, %Y").strftime("%Y-%m")
-    except ValueError:
-        return manila_now().strftime("%Y-%m")
+    raw_date = record.get("date")
+    if raw_date:
+        try:
+            if isinstance(raw_date, str):
+                return datetime.strptime(raw_date, "%b %d, %Y").strftime("%Y-%m")
+            if hasattr(raw_date, "strftime"):
+                return raw_date.strftime("%Y-%m")
+        except (TypeError, ValueError):
+            pass
+    return manila_now().strftime("%Y-%m")
 
 
 def write_excel(state):
@@ -1035,7 +1068,10 @@ def calculate_expression(expression):
         if isinstance(node, ast.Expression):
             return evaluate(node.body)
         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-            return float(node.value)
+            value = float(node.value)
+            if value != value or abs(value) == float("inf"):
+                raise ValueError("Enter a valid arithmetic expression.")
+            return value
         if isinstance(node, ast.BinOp) and type(node.op) in CALCULATOR_OPERATORS:
             left = evaluate(node.left)
             right = evaluate(node.right)
@@ -1043,9 +1079,16 @@ def calculate_expression(expression):
                 raise ValueError("Cannot divide by zero.")
             if isinstance(node.op, ast.Pow) and abs(right) > 10:
                 raise ValueError("Exponent is limited to 10.")
-            return CALCULATOR_OPERATORS[type(node.op)](left, right)
+            result = CALCULATOR_OPERATORS[type(node.op)](left, right)
+            if result != result or abs(result) == float("inf"):
+                raise ValueError("Enter a valid arithmetic expression.")
+            return result
         if isinstance(node, ast.UnaryOp) and type(node.op) in CALCULATOR_OPERATORS:
-            return CALCULATOR_OPERATORS[type(node.op)](evaluate(node.operand))
+            operand = evaluate(node.operand)
+            result = CALCULATOR_OPERATORS[type(node.op)](operand)
+            if result != result or abs(result) == float("inf"):
+                raise ValueError("Enter a valid arithmetic expression.")
+            return result
         raise ValueError("Use numbers and +, -, *, /, or ** only.")
 
     try:
@@ -1232,24 +1275,44 @@ def payroll_report_dialog():
 
 
 def add_tx(name, price, qty, delivery, ttype, sender, record_date=None, details=None):
-    p = float(price or 0.0)
-    q = int(qty or 0)
-    d = float(delivery or 0.0)
+    try:
+        p = float(price or 0.0)
+    except (TypeError, ValueError):
+        p = 0.0
+    try:
+        q = max(0, int(float(qty or 0)))
+    except (TypeError, ValueError):
+        q = 0
+    try:
+        d = float(delivery or 0.0)
+    except (TypeError, ValueError):
+        d = 0.0
     if p <= 0 or q <= 0:
         return False
     amount = (p * q) + d if ttype == "material" else p
-    selected_date = record_date or manila_now().date()
+    if isinstance(record_date, str):
+        try:
+            selected_date = datetime.strptime(record_date, "%b %d, %Y").date()
+        except ValueError:
+            try:
+                selected_date = datetime.fromisoformat(record_date).date()
+            except ValueError:
+                selected_date = manila_now().date()
+    elif hasattr(record_date, "strftime"):
+        selected_date = record_date.date() if hasattr(record_date, "date") else record_date
+    else:
+        selected_date = manila_now().date()
     st.session_state.records.append({
         "id": str(time.time()),
         "date": selected_date.strftime("%b %d, %Y"),
         "recorded_at": datetime.combine(selected_date, datetime.min.time(), PHILIPPINES_TZ).isoformat(),
-        "name": name.upper(),
+        "name": (name or "ITEM").upper(),
         "price": p,
         "qty": q,
         "delivery": d,
         "amount": float(amount),
         "type": ttype,
-        "sender": sender,
+        "sender": sender or "",
         **(details or {}),
     })
     persist_state()
